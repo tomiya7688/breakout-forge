@@ -6,6 +6,7 @@ Contracts contain transport data only and must not depend on pygame or persisten
 from dataclasses import dataclass
 
 from breakout_forge.contracts.game_state import GameState
+from breakout_forge.contracts.gameplay import GameplaySnapshot
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,6 +16,7 @@ class FrameRequest:
     delta_seconds: float
     start_requested: bool = False
     restart_requested: bool = False
+    move_axis: float = 0.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,3 +25,4 @@ class FrameResult:
 
     running: bool = True
     state: GameState = GameState.READY
+    gameplay: GameplaySnapshot | None = None

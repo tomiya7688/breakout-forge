@@ -10,6 +10,7 @@ class UiFrameInput:
     quit_requested: bool = False
     start_requested: bool = False
     restart_requested: bool = False
+    move_axis: float = 0.0
 
 
 class EventProcessing:
@@ -29,8 +30,14 @@ class EventProcessing:
                 elif event.key == pygame.K_r:
                     restart_requested = True
 
+        keys = pygame.key.get_pressed()
+        left = bool(keys[pygame.K_LEFT] or keys[pygame.K_a])
+        right = bool(keys[pygame.K_RIGHT] or keys[pygame.K_d])
+        move_axis = float(right) - float(left)
+
         return UiFrameInput(
             quit_requested=quit_requested,
             start_requested=start_requested,
             restart_requested=restart_requested,
+            move_axis=move_axis,
         )

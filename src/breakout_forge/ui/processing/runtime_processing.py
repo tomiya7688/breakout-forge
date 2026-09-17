@@ -45,9 +45,10 @@ class RuntimeProcessing:
                     delta_seconds,
                     start_requested=frame_input.start_requested,
                     restart_requested=frame_input.restart_requested,
+                    move_axis=frame_input.move_axis,
                 )
                 running = result.running
-                self._render_processing.render(screen, result.state)
+                self._render_processing.render(screen, result)
 
             return 0
         finally:
