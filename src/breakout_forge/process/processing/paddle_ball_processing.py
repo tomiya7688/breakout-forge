@@ -7,6 +7,11 @@ from math import hypot
 
 from breakout_forge.contracts.gameplay import BallSnapshot, GameplaySnapshot, RectSnapshot
 from breakout_forge.contracts.settings import GameplaySettings, PlayfieldSettings
+from breakout_forge.process.model.board import Board
+from breakout_forge.process.processing.collision import (
+    BoardCollisionProcessing,
+    BoardCollisionResult,
+)
 
 
 @dataclass(slots=True)
@@ -29,12 +34,33 @@ class _Ball:
 class PaddleBallProcessing:
     """Own mutable paddle/ball state without depending on pygame."""
 
-    def __init__(self, gameplay: GameplaySettings, playfield: PlayfieldSettings) -> None:
+    def __init__(
+        self,
+        gameplay: GameplaySettings,
+        playfield: PlayfieldSettings,
+        board: Board | None = None,
+        board_collision_processing: BoardCollisionProcessing | None = None,
+    ) -> None:
         self._settings = gameplay
         self._playfield = playfield
+        self._board = board
+        self._board_collision_processing = (
+            board_collision_processing or BoardCollisionProcessing()
+        )
+        self._last_board_collisions: tuple[BoardCollisionResult, ...] = ()
         self._paddle: _Paddle
         self._balls: list[_Ball]
         self.reset()
+
+    @property
+    def last_board_collisions(self) -> tuple[BoardCollisionResult, ...]:
+        return self._last_board_collisions
+
+    def set_board(self, board: Board | None) -> None:
+        """Replace the active board without coupling board creation to this processor."""
+
+        self._board = board
+        self._last_board_collisions = ()
 
     def reset(self) -> None:
         paddle_width = float(self._settings.paddle_size.width)
@@ -61,6 +87,7 @@ class PaddleBallProcessing:
                 size=size,
             )
         ]
+        self._last_board_collisions = ()
 
     def update(self, delta_seconds: float, move_axis: float) -> bool:
         """Advance gameplay and return True when all balls have fallen out."""
@@ -72,7 +99,10 @@ class PaddleBallProcessing:
         )
 
         survivors: list[_Ball] = []
+        collisions: list[BoardCollisionResult] = []
         for ball in self._balls:
+            previous_x = ball.x
+            previous_y = ball.y
             ball.x += ball.vx * delta_seconds
             ball.y += ball.vy * delta_seconds
 
@@ -87,6 +117,16 @@ class PaddleBallProcessing:
                 ball.y = 0.0
                 ball.vy = abs(ball.vy)
 
+            if self._board is not None:
+                collision = self._board_collision_processing.resolve(
+                    ball,
+                    self._board,
+                    previous_x=previous_x,
+                    previous_y=previous_y,
+                )
+                if collision.collided:
+                    collisions.append(collision)
+
             if self._intersects_paddle(ball) and ball.vy > 0:
                 ball.y = self._paddle.y - ball.size
                 ball.vy = -abs(ball.vy)
@@ -95,6 +135,7 @@ class PaddleBallProcessing:
                 survivors.append(ball)
 
         self._balls = survivors
+        self._last_board_collisions = tuple(collisions)
         return not self._balls
 
     def _intersects_paddle(self, ball: _Ball) -> bool:
