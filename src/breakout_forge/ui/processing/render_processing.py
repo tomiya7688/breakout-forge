@@ -16,6 +16,20 @@ class RenderProcessing:
         if gameplay is not None:
             scale_x = screen.get_width() / gameplay.playfield_width
             scale_y = screen.get_height() / gameplay.playfield_height
+
+            for block in gameplay.blocks:
+                rect = block.rect
+                pygame.draw.rect(
+                    screen,
+                    (110, 170, 230),
+                    pygame.Rect(
+                        round(rect.x * scale_x),
+                        round(rect.y * scale_y),
+                        max(1, round(rect.width * scale_x)),
+                        max(1, round(rect.height * scale_y)),
+                    ),
+                )
+
             paddle = gameplay.paddle
             pygame.draw.rect(
                 screen,
@@ -38,6 +52,14 @@ class RenderProcessing:
                         max(1, round(ball.size * scale_y)),
                     ),
                 )
+
+            score_font = pygame.font.Font(None, 28)
+            score_text = score_font.render(
+                f"Score: {gameplay.score}",
+                True,
+                (230, 230, 230),
+            )
+            screen.blit(score_text, (12, 10))
 
         if result.state is not GameState.PLAYING:
             font = pygame.font.Font(None, 36)
