@@ -1,12 +1,24 @@
 {
   "format_version": 1,
+  "display": {
+    "width": 800,
+    "height": 600,
+    "fps": 60,
+    "title": "Breakout Forge"
+  },
   "gameplay": {
     "ball_speed": 360.0,
+    "ball_size": 14,
+    "ball_initial_direction": {
+      "x": 0.70710678,
+      "y": -0.70710678
+    },
     "paddle_speed": 520.0,
     "paddle_size": {
       "width": 120,
       "height": 18
-    }
+    },
+    "paddle_bottom_margin": 36
   },
   "stage_size": {
     "columns": 20,
@@ -20,6 +32,8 @@
     "load_mode": "keep_background"
   },
   "playfield": {
+    "width": 800,
+    "height": 600,
     "fit": "contain"
   }
 }
