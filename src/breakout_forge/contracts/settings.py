@@ -25,6 +25,12 @@ class GameplaySettings:
 
 
 @dataclass(frozen=True, slots=True)
+class BreakImageSettings:
+    split: GridSettings
+    load_mode: str
+
+
+@dataclass(frozen=True, slots=True)
 class PlayfieldSettings:
     fit: str
 
@@ -32,6 +38,6 @@ class PlayfieldSettings:
 @dataclass(frozen=True, slots=True)
 class ResolvedStageSettings:
     gameplay: GameplaySettings
-    board: GridSettings
-    image_split: GridSettings
+    stage_size: GridSettings
+    break_image: BreakImageSettings
     playfield: PlayfieldSettings
