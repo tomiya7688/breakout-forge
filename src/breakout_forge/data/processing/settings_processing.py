@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from breakout_forge.contracts.settings import (
+    AppearanceSettings,
     BreakImageSettings,
     DisplaySettings,
     GameplaySettings,
@@ -68,6 +69,16 @@ def _non_negative_int(value: Any, name: str) -> int:
     return value
 
 
+def _rgb(value: Any, name: str) -> tuple[int, int, int]:
+    if (
+        not isinstance(value, list)
+        or len(value) != 3
+        or any(isinstance(item, bool) or not isinstance(item, int) or item < 0 or item > 255 for item in value)
+    ):
+        raise SettingsError(f"{name} must be an RGB array with values 0..255")
+    return value[0], value[1], value[2]
+
+
 def _require_mapping(parent: dict[str, Any], key: str) -> dict[str, Any]:
     value = parent.get(key)
     if not isinstance(value, dict):
@@ -87,6 +98,7 @@ def _convert_resolved_settings(merged: dict[str, Any]) -> ResolvedStageSettings:
     ball_direction = _require_mapping(gameplay, "ball_initial_direction")
     stage_size = _require_mapping(merged, "stage_size")
     standard_stage = _require_mapping(merged, "standard_stage")
+    appearance = _require_mapping(merged, "appearance")
     break_image = _require_mapping(merged, "break_image")
     break_image_split = _require_mapping(break_image, "split")
     playfield = _require_mapping(merged, "playfield")
@@ -129,6 +141,9 @@ def _convert_resolved_settings(merged: dict[str, Any]) -> ResolvedStageSettings:
             paddle_bottom_margin=_positive_int(
                 gameplay.get("paddle_bottom_margin"), "gameplay.paddle_bottom_margin"
             ),
+            ball_paddle_gap=_non_negative_int(
+                gameplay.get("ball_paddle_gap"), "gameplay.ball_paddle_gap"
+            ),
         ),
         stage_size=GridSettings(
             columns=_positive_int(stage_size.get("columns"), "stage_size.columns"),
@@ -146,6 +161,19 @@ def _convert_resolved_settings(merged: dict[str, Any]) -> ResolvedStageSettings:
             block_hp=_positive_int(standard_stage.get("block_hp"), "standard_stage.block_hp"),
             score_per_layer=_non_negative_int(
                 standard_stage.get("score_per_layer"), "standard_stage.score_per_layer"
+            ),
+        ),
+        appearance=AppearanceSettings(
+            background_rgb=_rgb(appearance.get("background_rgb"), "appearance.background_rgb"),
+            block_rgb=_rgb(appearance.get("block_rgb"), "appearance.block_rgb"),
+            paddle_rgb=_rgb(appearance.get("paddle_rgb"), "appearance.paddle_rgb"),
+            ball_rgb=_rgb(appearance.get("ball_rgb"), "appearance.ball_rgb"),
+            text_rgb=_rgb(appearance.get("text_rgb"), "appearance.text_rgb"),
+            overlay_font_size=_positive_int(
+                appearance.get("overlay_font_size"), "appearance.overlay_font_size"
+            ),
+            score_font_size=_positive_int(
+                appearance.get("score_font_size"), "appearance.score_font_size"
             ),
         ),
         break_image=BreakImageSettings(
