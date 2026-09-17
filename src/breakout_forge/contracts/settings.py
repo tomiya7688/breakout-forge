@@ -1,4 +1,4 @@
-"""Cross-layer contracts for resolved gameplay settings."""
+"""Cross-layer contracts for resolved external settings."""
 
 from __future__ import annotations
 
@@ -15,6 +15,14 @@ class SizeSettings:
 class GridSettings:
     columns: int
     rows: int
+
+
+@dataclass(frozen=True, slots=True)
+class DisplaySettings:
+    width: int
+    height: int
+    fps: int
+    title: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,6 +45,7 @@ class PlayfieldSettings:
 
 @dataclass(frozen=True, slots=True)
 class ResolvedStageSettings:
+    display: DisplaySettings
     gameplay: GameplaySettings
     stage_size: GridSettings
     break_image: BreakImageSettings
