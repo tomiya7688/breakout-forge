@@ -31,7 +31,14 @@ Values that a stage author or user is likely to tune belong outside the program.
 - Missing stage keys inherit common values.
 - Keep normal gameplay tuning out of Python constants.
 
-At minimum externalize ball speed, paddle speed/size, board dimensions, image split dimensions, playfield fit, layer HP, and asset paths. New tunable values should default to external data unless there is a strong reason not to.
+At minimum externalize ball speed, paddle speed/size, logical stage size, break-target image split dimensions, break-target image load mode, playfield fit, layer HP, and asset paths. New tunable values should default to external data unless there is a strong reason not to.
+
+Terminology:
+- `stage_size`: logical size of the whole stage in cells. It is not window/render resolution.
+- `break_image`: the image that becomes the destructible target.
+- `break_image.split`: how many pieces the destructible image is divided into.
+- `break_image.load_mode`: `keep_background` or `remove_background` before block generation.
+- Window/render resolution is a separate UI concern.
 
 ## Task Routing
 - App window/input/rendering: `src/breakout_forge/ui/`
