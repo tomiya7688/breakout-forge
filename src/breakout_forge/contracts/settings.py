@@ -39,6 +39,7 @@ class GameplaySettings:
     paddle_speed: float
     paddle_size: SizeSettings
     paddle_bottom_margin: int
+    ball_paddle_gap: int = 4
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +52,17 @@ class StandardStageSettings:
     gap_y: int
     block_hp: int
     score_per_layer: int
+
+
+@dataclass(frozen=True, slots=True)
+class AppearanceSettings:
+    background_rgb: tuple[int, int, int]
+    block_rgb: tuple[int, int, int]
+    paddle_rgb: tuple[int, int, int]
+    ball_rgb: tuple[int, int, int]
+    text_rgb: tuple[int, int, int]
+    overlay_font_size: int
+    score_font_size: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,5 +84,6 @@ class ResolvedStageSettings:
     gameplay: GameplaySettings
     stage_size: GridSettings
     standard_stage: StandardStageSettings
+    appearance: AppearanceSettings
     break_image: BreakImageSettings
     playfield: PlayfieldSettings
