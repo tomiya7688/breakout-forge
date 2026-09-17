@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from breakout_forge.contracts.settings import (
+    BreakImageSettings,
     GameplaySettings,
     GridSettings,
     PlayfieldSettings,
@@ -80,13 +81,20 @@ def resolve_stage_settings(common_path: Path, stage_path: Path) -> ResolvedStage
 
     gameplay = _require_mapping(merged, "gameplay")
     paddle_size = _require_mapping(gameplay, "paddle_size")
-    board = _require_mapping(merged, "board")
-    image_split = _require_mapping(merged, "image_split")
+    stage_size = _require_mapping(merged, "stage_size")
+    break_image = _require_mapping(merged, "break_image")
+    break_image_split = _require_mapping(break_image, "split")
     playfield = _require_mapping(merged, "playfield")
 
     fit = playfield.get("fit")
     if fit not in {"contain", "cover", "stretch"}:
         raise SettingsError("playfield.fit must be contain, cover, or stretch")
+
+    load_mode = break_image.get("load_mode")
+    if load_mode not in {"keep_background", "remove_background"}:
+        raise SettingsError(
+            "break_image.load_mode must be keep_background or remove_background"
+        )
 
     return ResolvedStageSettings(
         gameplay=GameplaySettings(
@@ -103,15 +111,20 @@ def resolve_stage_settings(common_path: Path, stage_path: Path) -> ResolvedStage
                 ),
             ),
         ),
-        board=GridSettings(
-            columns=_positive_int(board.get("columns"), "board.columns"),
-            rows=_positive_int(board.get("rows"), "board.rows"),
+        stage_size=GridSettings(
+            columns=_positive_int(stage_size.get("columns"), "stage_size.columns"),
+            rows=_positive_int(stage_size.get("rows"), "stage_size.rows"),
         ),
-        image_split=GridSettings(
-            columns=_positive_int(
-                image_split.get("columns"), "image_split.columns"
+        break_image=BreakImageSettings(
+            split=GridSettings(
+                columns=_positive_int(
+                    break_image_split.get("columns"), "break_image.split.columns"
+                ),
+                rows=_positive_int(
+                    break_image_split.get("rows"), "break_image.split.rows"
+                ),
             ),
-            rows=_positive_int(image_split.get("rows"), "image_split.rows"),
+            load_mode=load_mode,
         ),
         playfield=PlayfieldSettings(fit=fit),
     )
