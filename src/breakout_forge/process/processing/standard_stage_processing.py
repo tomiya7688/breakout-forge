@@ -8,7 +8,7 @@ from breakout_forge.contracts.settings import (
     PlayfieldSettings,
     StandardStageSettings,
 )
-from breakout_forge.process.model.board import BlockLayer, Board
+from breakout_forge.process.model.board import BlockCell, BlockLayer, Board, RectValue
 from breakout_forge.process.processing.collision import BoardCollisionResult
 
 
@@ -60,8 +60,6 @@ class StandardStageProcessing:
                 y = self._settings.top_margin + row * (
                     cell_height + self._settings.gap_y
                 )
-                from breakout_forge.process.model.board import BlockCell, RectValue
-
                 cell = BlockCell(
                     column=column,
                     row=row,
