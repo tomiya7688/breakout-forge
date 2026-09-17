@@ -16,11 +16,13 @@ class UiMessenger:
         *,
         start_requested: bool = False,
         restart_requested: bool = False,
+        move_axis: float = 0.0,
     ) -> FrameResult:
         return self._process_messenger.update_frame(
             FrameRequest(
                 delta_seconds=delta_seconds,
                 start_requested=start_requested,
                 restart_requested=restart_requested,
+                move_axis=move_axis,
             )
         )
