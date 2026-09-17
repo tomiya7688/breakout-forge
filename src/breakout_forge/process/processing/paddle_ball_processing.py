@@ -81,7 +81,7 @@ class PaddleBallProcessing:
         self._balls = [
             _Ball(
                 x=(self._playfield.width - size) / 2.0,
-                y=paddle_y - size - 4.0,
+                y=paddle_y - size - float(self._settings.ball_paddle_gap),
                 vx=vx,
                 vy=vy,
                 size=size,

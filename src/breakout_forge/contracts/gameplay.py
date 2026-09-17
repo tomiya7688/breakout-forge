@@ -19,8 +19,17 @@ class BallSnapshot:
 
 
 @dataclass(frozen=True, slots=True)
+class BlockSnapshot:
+    column: int
+    row: int
+    rect: RectSnapshot
+
+
+@dataclass(frozen=True, slots=True)
 class GameplaySnapshot:
     paddle: RectSnapshot
     balls: tuple[BallSnapshot, ...]
     playfield_width: float
     playfield_height: float
+    blocks: tuple[BlockSnapshot, ...] = ()
+    score: int = 0
