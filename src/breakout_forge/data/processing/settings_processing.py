@@ -15,6 +15,7 @@ from breakout_forge.contracts.settings import (
     PlayfieldSettings,
     ResolvedStageSettings,
     SizeSettings,
+    StandardStageSettings,
     VectorSettings,
 )
 
@@ -79,6 +80,7 @@ def _convert_resolved_settings(merged: dict[str, Any]) -> ResolvedStageSettings:
     paddle_size = _require_mapping(gameplay, "paddle_size")
     ball_direction = _require_mapping(gameplay, "ball_initial_direction")
     stage_size = _require_mapping(merged, "stage_size")
+    standard_stage = _require_mapping(merged, "standard_stage")
     break_image = _require_mapping(merged, "break_image")
     break_image_split = _require_mapping(break_image, "split")
     playfield = _require_mapping(merged, "playfield")
@@ -125,6 +127,20 @@ def _convert_resolved_settings(merged: dict[str, Any]) -> ResolvedStageSettings:
         stage_size=GridSettings(
             columns=_positive_int(stage_size.get("columns"), "stage_size.columns"),
             rows=_positive_int(stage_size.get("rows"), "stage_size.rows"),
+        ),
+        standard_stage=StandardStageSettings(
+            left_margin=_positive_int(standard_stage.get("left_margin"), "standard_stage.left_margin"),
+            right_margin=_positive_int(standard_stage.get("right_margin"), "standard_stage.right_margin"),
+            top_margin=_positive_int(standard_stage.get("top_margin"), "standard_stage.top_margin"),
+            block_area_height=_positive_int(
+                standard_stage.get("block_area_height"), "standard_stage.block_area_height"
+            ),
+            gap_x=_positive_int(standard_stage.get("gap_x"), "standard_stage.gap_x"),
+            gap_y=_positive_int(standard_stage.get("gap_y"), "standard_stage.gap_y"),
+            block_hp=_positive_int(standard_stage.get("block_hp"), "standard_stage.block_hp"),
+            score_per_layer=_positive_int(
+                standard_stage.get("score_per_layer"), "standard_stage.score_per_layer"
+            ),
         ),
         break_image=BreakImageSettings(
             split=GridSettings(
