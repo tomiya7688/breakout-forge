@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from breakout_forge.contracts.layer_damage import LayerDamageResult
-from breakout_forge.process.model.board import BlockCell, Board, RectValue
+from breakout_forge.process.model.board import Board, RectValue
 from breakout_forge.process.processing.layer_damage_processing import LayerDamageProcessing
 
 
@@ -139,8 +139,17 @@ class BoardCollisionProcessing:
                 ball.x = rect.x - ball.size
             elif previous_x >= rect.x + rect.width:
                 ball.x = rect.x + rect.width
+            elif ball.x + ball.size / 2.0 < rect.x + rect.width / 2.0:
+                ball.x = rect.x - ball.size
+            else:
+                ball.x = rect.x + rect.width
+
         if reflect_y:
             if previous_y + ball.size <= rect.y:
                 ball.y = rect.y - ball.size
             elif previous_y >= rect.y + rect.height:
+                ball.y = rect.y + rect.height
+            elif ball.y + ball.size / 2.0 < rect.y + rect.height / 2.0:
+                ball.y = rect.y - ball.size
+            else:
                 ball.y = rect.y + rect.height
