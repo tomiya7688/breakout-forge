@@ -1,5 +1,11 @@
 {
   "format_version": 1,
+  "display": {
+    "width": 800,
+    "height": 600,
+    "fps": 60,
+    "title": "Breakout Forge"
+  },
   "gameplay": {
     "ball_speed": 360.0,
     "paddle_speed": 520.0,
