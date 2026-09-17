@@ -4,10 +4,11 @@ from breakout_forge.contracts.settings import (
     SizeSettings,
     VectorSettings,
 )
+from breakout_forge.process.model.board import BlockLayer, Board
 from breakout_forge.process.processing.paddle_ball_processing import PaddleBallProcessing
 
 
-def _processing() -> PaddleBallProcessing:
+def _processing(board: Board | None = None) -> PaddleBallProcessing:
     return PaddleBallProcessing(
         GameplaySettings(
             ball_speed=100.0,
@@ -18,6 +19,7 @@ def _processing() -> PaddleBallProcessing:
             paddle_bottom_margin=20,
         ),
         PlayfieldSettings(width=400, height=300, fit="contain"),
+        board=board,
     )
 
 
@@ -48,3 +50,27 @@ def test_reset_restores_ball_and_paddle() -> None:
     processing.reset()
 
     assert processing.snapshot() == initial
+
+
+def test_update_routes_ball_collision_damage_to_board() -> None:
+    board = Board.create_grid(
+        columns=1,
+        rows=1,
+        origin_x=200.0,
+        origin_y=240.0,
+        cell_width=30.0,
+        cell_height=10.0,
+    )
+    layer = BlockLayer(id="target", hp=2, max_hp=2)
+    board.cell_at(0, 0).push_layer(layer)
+    processing = _processing(board)
+
+    processing.update(0.1, move_axis=0.0)
+
+    assert layer.hp == 1
+    assert len(processing.last_board_collisions) == 1
+    collision = processing.last_board_collisions[0]
+    assert collision.column == 0
+    assert collision.row == 0
+    assert collision.damage is not None
+    assert collision.damage.target_layer_id == "target"
