@@ -18,6 +18,12 @@ class GridSettings:
 
 
 @dataclass(frozen=True, slots=True)
+class VectorSettings:
+    x: float
+    y: float
+
+
+@dataclass(frozen=True, slots=True)
 class DisplaySettings:
     width: int
     height: int
@@ -28,8 +34,11 @@ class DisplaySettings:
 @dataclass(frozen=True, slots=True)
 class GameplaySettings:
     ball_speed: float
+    ball_size: int
+    ball_initial_direction: VectorSettings
     paddle_speed: float
     paddle_size: SizeSettings
+    paddle_bottom_margin: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,6 +49,8 @@ class BreakImageSettings:
 
 @dataclass(frozen=True, slots=True)
 class PlayfieldSettings:
+    width: int
+    height: int
     fit: str
 
 
