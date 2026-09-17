@@ -36,5 +36,5 @@ def create_application(common_path: Path | None = None) -> UiCommander:
     process_commander = ProcessCommander(frame_processing)
     process_messenger = ProcessMessenger(process_commander)
     ui_messenger = UiMessenger(process_messenger)
-    runtime_processing = RuntimeProcessing(ui_messenger, settings.display)
+    runtime_processing = RuntimeProcessing(ui_messenger, settings.display, settings.appearance)
     return UiCommander(runtime_processing)
