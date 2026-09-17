@@ -1,0 +1,130 @@
+"""Load, merge, validate, and convert external gameplay settings."""
+
+from __future__ import annotations
+
+from copy import deepcopy
+import json
+from pathlib import Path
+from typing import Any
+
+from breakout_forge.contracts.settings import (
+    BreakImageSettings,
+    GameplaySettings,
+    GridSettings,
+    PlayfieldSettings,
+    ResolvedStageSettings,
+    SizeSettings,
+)
+
+
+class SettingsError(ValueError):
+    """Raised when external settings cannot be resolved safely."""
+
+
+def _read_json(path: Path) -> dict[str, Any]:
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SettingsError(f"failed to read settings: {path}") from exc
+    if not isinstance(raw, dict):
+        raise SettingsError(f"settings root must be an object: {path}")
+    return raw
+
+
+def _recursive_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    merged = deepcopy(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _recursive_merge(merged[key], value)
+        else:
+            merged[key] = deepcopy(value)
+    return merged
+
+
+def _positive_number(value: Any, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+        raise SettingsError(f"{name} must be a positive number")
+    return float(value)
+
+
+def _positive_int(value: Any, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise SettingsError(f"{name} must be a positive integer")
+    return value
+
+
+def _require_mapping(parent: dict[str, Any], key: str) -> dict[str, Any]:
+    value = parent.get(key)
+    if not isinstance(value, dict):
+        raise SettingsError(f"{key} must be an object")
+    return value
+
+
+def _validate_format_version(raw: dict[str, Any], source_name: str) -> None:
+    if raw.get("format_version") != 1:
+        raise SettingsError(f"unsupported format_version in {source_name}")
+
+
+def resolve_stage_settings(common_path: Path, stage_path: Path) -> ResolvedStageSettings:
+    """Resolve common defaults plus optional per-stage overrides."""
+
+    common = _read_json(common_path)
+    stage = _read_json(stage_path)
+    _validate_format_version(common, "common settings")
+    _validate_format_version(stage, "stage settings")
+
+    stage_settings = stage.get("settings", {})
+    if not isinstance(stage_settings, dict):
+        raise SettingsError("stage.settings must be an object")
+
+    merged = _recursive_merge(common, stage_settings)
+
+    gameplay = _require_mapping(merged, "gameplay")
+    paddle_size = _require_mapping(gameplay, "paddle_size")
+    stage_size = _require_mapping(merged, "stage_size")
+    break_image = _require_mapping(merged, "break_image")
+    break_image_split = _require_mapping(break_image, "split")
+    playfield = _require_mapping(merged, "playfield")
+
+    fit = playfield.get("fit")
+    if fit not in {"contain", "cover", "stretch"}:
+        raise SettingsError("playfield.fit must be contain, cover, or stretch")
+
+    load_mode = break_image.get("load_mode")
+    if load_mode not in {"keep_background", "remove_background"}:
+        raise SettingsError(
+            "break_image.load_mode must be keep_background or remove_background"
+        )
+
+    return ResolvedStageSettings(
+        gameplay=GameplaySettings(
+            ball_speed=_positive_number(gameplay.get("ball_speed"), "gameplay.ball_speed"),
+            paddle_speed=_positive_number(
+                gameplay.get("paddle_speed"), "gameplay.paddle_speed"
+            ),
+            paddle_size=SizeSettings(
+                width=_positive_int(
+                    paddle_size.get("width"), "gameplay.paddle_size.width"
+                ),
+                height=_positive_int(
+                    paddle_size.get("height"), "gameplay.paddle_size.height"
+                ),
+            ),
+        ),
+        stage_size=GridSettings(
+            columns=_positive_int(stage_size.get("columns"), "stage_size.columns"),
+            rows=_positive_int(stage_size.get("rows"), "stage_size.rows"),
+        ),
+        break_image=BreakImageSettings(
+            split=GridSettings(
+                columns=_positive_int(
+                    break_image_split.get("columns"), "break_image.split.columns"
+                ),
+                rows=_positive_int(
+                    break_image_split.get("rows"), "break_image.split.rows"
+                ),
+            ),
+            load_mode=load_mode,
+        ),
+        playfield=PlayfieldSettings(fit=fit),
+    )

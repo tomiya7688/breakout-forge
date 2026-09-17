@@ -1,0 +1,14 @@
+"""UI-layer messaging boundary."""
+
+from breakout_forge.contracts.frame import FrameRequest, FrameResult
+from breakout_forge.process.messenger import ProcessMessenger
+
+
+class UiMessenger:
+    """Forward UI-originated requests to the process layer."""
+
+    def __init__(self, process_messenger: ProcessMessenger) -> None:
+        self._process_messenger = process_messenger
+
+    def update_frame(self, delta_seconds: float) -> FrameResult:
+        return self._process_messenger.update_frame(FrameRequest(delta_seconds))

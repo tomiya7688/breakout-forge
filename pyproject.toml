@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "breakout-forge"
+version = "0.1.0"
+description = "A small extensible breakout game foundation with image stages, layered destruction and mod support."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "pygame>=2.6,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9",
+]
+
+[project.scripts]
+breakout-forge = "breakout_forge.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"

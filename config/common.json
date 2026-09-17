@@ -1,0 +1,25 @@
+{
+  "format_version": 1,
+  "gameplay": {
+    "ball_speed": 360.0,
+    "paddle_speed": 520.0,
+    "paddle_size": {
+      "width": 120,
+      "height": 18
+    }
+  },
+  "stage_size": {
+    "columns": 20,
+    "rows": 15
+  },
+  "break_image": {
+    "split": {
+      "columns": 20,
+      "rows": 15
+    },
+    "load_mode": "keep_background"
+  },
+  "playfield": {
+    "fit": "contain"
+  }
+}

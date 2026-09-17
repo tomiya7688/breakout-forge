@@ -62,6 +62,20 @@ Breakout Forge は、シンプルなブロック崩しを遊ぶためのゲー�
 
 MOD から pygame の内部オブジェクトや private 実装へ直接依存させず、公開 API とイベントを通して拡張する。
 
+### 3.6 調整値は原則として外部データへ出す
+
+ゲームバランス、表示寸法、盤面構成、画像分割など、利用者・作者が変更したくなる可能性が高い値は原則としてプログラムへハードコードしない。
+
+標準値は `config/common.json` に置き、ステージ固有値は各 `stages/<stage>/stage.json` に置く。
+
+解決規則は次の通り。
+
+1. `common.json` を読み込む
+2. `stage.json` に同名設定が存在する場合のみ上書きする
+3. `stage.json` に設定がなければ common 値をそのまま使用する
+
+プログラム内定数は、ファイル読込不能時の起動保護など最低限の安全値に限定し、通常のゲーム調整には使用しない。
+
 ---
 
 ## 4. 想定技術
@@ -93,30 +107,17 @@ breakout-forge/
 │     ├─ __main__.py
 │     ├─ app.py
 │     ├─ game/
-│     │  ├─ game.py
-│     │  ├─ ball.py
-│     │  ├─ paddle.py
-│     │  ├─ board.py
-│     │  ├─ cell.py
-│     │  ├─ layer.py
-│     │  └─ collision.py
 │     ├─ stage/
-│     │  ├─ loader.py
-│     │  ├─ schema.py
-│     │  └─ image_stage.py
 │     ├─ modding/
-│     │  ├─ loader.py
-│     │  ├─ api.py
-│     │  └─ events.py
 │     ├─ assets/
-│     │  └─ loader.py
 │     └─ config/
-│        └─ loader.py
 ├─ assets/
+├─ config/
+│  └─ common.json
 ├─ stages/
 │  └─ sample/
+│     └─ stage.json
 ├─ mods/
-│  └─ example_mod/
 ├─ userdata/
 ├─ tests/
 ├─ scripts/
@@ -137,72 +138,36 @@ breakout-forge/
 
 ### 6.1 Game
 
-ゲーム全体の状態遷移を管理する。
-
-主な責務:
-
-- ゲーム開始 / 終了
-- 更新処理
-- 描画処理
-- ステージクリア判定
-- ゲームオーバー判定
-- イベント発火
-
-Game 自身へブロックや画像の詳細処理を詰め込まない。
+ゲーム全体の状態遷移を管理する。ゲーム開始 / 終了、更新、描画、クリア判定、ゲームオーバー判定、イベント発火を担当するが、ブロックや画像の詳細処理は抱え込まない。
 
 ### 6.2 Paddle
-
-主な責務:
 
 - プレイヤー入力による左右移動
 - 移動範囲制限
 - ボールとの衝突領域提供
+- 速度と大きさは解決済みステージ設定から受け取る
 
 ### 6.3 Ball
-
-主な責務:
 
 - 位置
 - 速度
 - 移動
 - 衝突後の反射
+- 速度は解決済みステージ設定から受け取る
 
 将来的に複数ボールを扱えるよう、Game が単一 Ball を固定的に持つ設計は避ける。
 
 ### 6.4 Board
 
-ブロック領域全体を管理する。
-
-```text
-Board
- ├─ Cell[0,0]
- ├─ Cell[1,0]
- ├─ ...
- └─ Cell[x,y]
-```
-
-Board はグリッド配置を基本とするが、将来的な自由配置拡張を妨げない構造にする。
+ブロック領域全体を管理する。マス数は解決済みステージ設定から受け取る。
 
 ### 6.5 Cell
 
-画面上の1マスを表す。
-
-想定データ:
-
-```python
-class BlockCell:
-    rect
-    layers
-    metadata
-```
-
-Cell 自身は複数の `BlockLayer` を持つ。
+画面上の1マスを表す。Cell 自身は複数の `BlockLayer` を持つ。
 
 ### 6.6 BlockLayer
 
 セル上の破壊可能な1層を表す。
-
-想定データ:
 
 ```python
 class BlockLayer:
@@ -222,225 +187,155 @@ class BlockLayer:
 
 ## 7. レイヤー破壊システム
 
-Breakout Forge の中心機能の一つ。
+Breakout Forge の中心機能の一つ。衝突時は最上位有効 Layer に damage を与え、HP が 0 以下なら破壊し、下位 Layer を有効化する。全 Layer がなくなれば Cell は空になる。
 
-例:
-
-```text
-初期
-┌──────────┐
-│ armor    │  HP 2
-├──────────┤
-│ picture  │  HP 1
-├──────────┤
-│ ground   │  HP 1
-└──────────┘
-```
-
-ボールが当たると最上位レイヤーの HP を減らす。
-
-```text
-Hit 1: armor HP 2 → 1
-Hit 2: armor HP 1 → 0 → armor 削除
-Hit 3: picture HP 1 → 0 → picture 削除
-Hit 4: ground HP 1 → 0 → Cell 空
-```
-
-### 7.1 基本ルール
-
-1. 衝突時、Cell の最上位有効レイヤーを取得する
-2. レイヤーへ damage を与える
-3. HP が 0 以下ならそのレイヤーを破壊する
-4. 下位レイヤーが存在すれば即座に表示・衝突対象へ切り替える
-5. レイヤーがなくなれば Cell は空になる
-
-### 7.2 クリア判定
-
-単純に「全 Cell が空」を固定ルールにはしない。
-
-ステージ側で将来的に以下を選べるようにする。
-
-- 全破壊
-- 特定タグを持つレイヤーの全破壊
-- 特定数破壊
-- ボスレイヤー破壊
-- MOD 独自条件
-
-初期実装では全破壊を標準とする。
+クリア条件は初期実装では全破壊とするが、将来的にはタグ指定、破壊数、ボス、MOD 条件へ拡張する。
 
 ---
 
 ## 8. 画像ステージ
 
-### 8.1 概要
+画像1枚を指定分割数へ論理分割し、それぞれを Cell / BlockLayer の表示領域として扱う。画像ファイルそのものは分割保存しない。
 
-画像1枚を指定グリッドへ分割し、それぞれを Cell / BlockLayer の表示領域として扱う。
+画像分割数は Board のマス数とは独立設定とする。通常は同じ値を使えるが、将来の複数セル割当や表示表現拡張を妨げない。
 
-画像そのものを物理的に分割ファイルへ保存する必要はない。
-
-```text
-image.png
-   ↓
-20 x 15 に論理分割
-   ↓
-300 Cell
-```
-
-各 BlockLayer は元画像と `source_rect` を参照する。
-
-### 8.2 描画イメージ
-
-```python
-screen.blit(
-    image,
-    destination_rect,
-    source_rect,
-)
-```
-
-破壊済み Cell は描画しないため、画像に穴が開いていくように見える。
-
-### 8.3 Fit モード
-
-初期候補:
-
-- `contain`: アスペクト比維持、全体表示
-- `cover`: アスペクト比維持、領域を埋める
-- `stretch`: 領域へ強制フィット
-
-初期実装では `contain` を標準とする。
+Fit モード初期候補は `contain`, `cover`, `stretch`。標準は `contain`。
 
 ---
 
 ## 9. 多層画像ステージ
 
-複数画像を同一グリッドへ割り当て、上から順番に破壊できる。
-
-```text
-layer_2.png   ← 最初に見える
-layer_1.png
-layer_0.png   ← 最下層
-```
-
-例えば一部を壊すと、その場所だけ下の画像が露出する。
-
-```text
-AAAAAAAA
-AAAABAAA
-AAABBAAA
-AAAAAAAA
-```
-
-A = 上層画像
-B = 下層画像
-
-これを標準システムとして実装し、特殊ケースとして扱わない。
+複数画像を同一グリッドへ割り当て、上から順番に破壊できる。上層の一部が壊れると、その場所だけ下層画像が露出する。
 
 ---
 
-## 10. ステージ定義
+## 10. 設定システム
 
-### 10.1 stage.json
+### 10.1 common.json
 
-初期案:
+全ステージの既定値を保持する。
+
+```json
+{
+  "format_version": 1,
+  "gameplay": {
+    "ball_speed": 360.0,
+    "paddle_speed": 520.0,
+    "paddle_size": {
+      "width": 120,
+      "height": 18
+    }
+  },
+  "board": {
+    "columns": 20,
+    "rows": 15
+  },
+  "image_split": {
+    "columns": 20,
+    "rows": 15
+  },
+  "playfield": {
+    "fit": "contain"
+  }
+}
+```
+
+単位は初期実装では次を標準とする。
+
+- `ball_speed`: pixel / second
+- `paddle_speed`: pixel / second
+- `paddle_size.width`, `height`: pixel
+- `board.columns`, `rows`: Cell 数
+- `image_split.columns`, `rows`: 元画像の論理分割数
+
+### 10.2 stage.json
+
+ステージ固有設定は必要な項目だけ記述する。
 
 ```json
 {
   "format_version": 1,
   "id": "sample_stage",
   "name": "Sample Stage",
-  "grid": {
-    "columns": 20,
-    "rows": 15
-  },
-  "playfield": {
-    "fit": "contain"
+  "settings": {
+    "gameplay": {
+      "ball_speed": 420.0
+    },
+    "board": {
+      "columns": 24,
+      "rows": 18
+    },
+    "image_split": {
+      "columns": 24,
+      "rows": 18
+    }
   },
   "layers": [
-    {
-      "id": "background",
-      "image": "background.png",
-      "hp": 1
-    },
     {
       "id": "main",
       "image": "main.png",
       "hp": 1
-    },
-    {
-      "id": "armor",
-      "image": "armor.png",
-      "hp": 2
     }
   ]
 }
 ```
 
-配列では下から上へ定義することを基本とする。
+この例では `ball_speed`, `board`, `image_split` のみ stage 値を使い、`paddle_speed`, `paddle_size`, `playfield.fit` は common 値を継承する。
 
-### 10.2 フォーマットバージョン
+### 10.3 設定マージ規則
 
-`format_version` を必須にする。
+設定はオブジェクト単位で全置換せず、キー単位で再帰的にマージする。
 
-将来 stage.json の仕様を変更しても、旧ステージを判定・変換できるようにする。
+例:
+
+```text
+common:
+paddle_size.width  = 120
+paddle_size.height = 18
+
+stage:
+paddle_size.width  = 160
+
+resolved:
+paddle_size.width  = 160
+paddle_size.height = 18
+```
+
+これによりステージ作者は変更したい値だけを書けばよい。
+
+### 10.4 外部化対象
+
+少なくとも以下は外部データ化する。
+
+- ボール速度
+- パドル速度
+- パドル幅 / 高さ
+- Board の列数 / 行数
+- 画像分割の列数 / 行数
+- playfield fit
+- Layer HP
+- 画像パス
+- 将来追加するボールサイズ、初期方向、残機、スコア倍率、背景、色、音量、アイテム率などの調整値
+
+新しい機能を実装する際も「ユーザーやステージ作者が変更したくなる値か」を確認し、該当するならプログラム定数ではなく設定項目を優先する。
+
+### 10.5 フォーマットバージョン
+
+`common.json` と `stage.json` はそれぞれ `format_version` を持つ。将来仕様変更時に旧データを判定・変換できるようにする。
 
 ---
 
 ## 11. Cell ごとの差分
 
-画像全体へ同一レイヤーを適用するだけでなく、Cell 単位で設定を変更できる構造を用意する。
-
-用途:
-
-- 一部だけ硬い
-- 一部だけ破壊不能
-- 中央だけ多層
-- 特定ブロックだけアイテムを持つ
-- 特定箇所のみイベント発火
-
-初期 stage.json では複雑化を避け、必要になった段階で `overrides` を追加する。
-
-例:
-
-```json
-{
-  "overrides": [
-    {
-      "x": 4,
-      "y": 3,
-      "layer": "armor",
-      "hp": 5
-    }
-  ]
-}
-```
+画像全体へ同一レイヤーを適用するだけでなく、Cell 単位で設定を変更できる構造を用意する。将来的に `overrides` を追加し、一部だけ硬い、破壊不能、多層、イベント付き等を表現する。
 
 ---
 
 ## 12. MOD システム
 
-### 12.1 配置
+`mods/<mod>/mod.json` と Python entry を使用する。MOD から pygame の private 実装へ直接依存させず、公開イベント API を経由する。
 
-```text
-mods/
-└─ example_mod/
-   ├─ mod.json
-   └─ main.py
-```
-
-### 12.2 mod.json
-
-```json
-{
-  "format_version": 1,
-  "id": "example_mod",
-  "name": "Example Mod",
-  "version": "1.0.0",
-  "entry": "main.py"
-}
-```
-
-### 12.3 初期イベント案
+初期イベント候補:
 
 - `on_game_start`
 - `on_game_update`
@@ -452,304 +347,22 @@ mods/
 - `on_stage_cleared`
 - `on_game_over`
 
-### 12.4 MOD API
+---
 
-MOD は公開 API 経由でゲームへアクセスする。
+## 13. 配布
 
-例:
-
-```python
-def setup(api):
-    api.events.subscribe("on_layer_destroyed", on_destroyed)
-
-
-def on_destroyed(event):
-    pass
-```
-
-### 12.5 セキュリティ上の扱い
-
-Python MOD は任意の Python コードを実行できるため、安全なサンドボックスとはみなさない。
-
-ドキュメント上で次を明示する。
-
-- 信頼できない MOD を実行しない
-- MOD はユーザー権限で任意コードを実行可能
-- MOD の安全性をゲーム本体が保証しない
+Windows は PyInstaller `--onedir` を使用する。`config/`, `assets/`, `stages/`, `mods/` は原則として exe 外部へ配置し、ユーザーが差し替え・追加できるようにする。
 
 ---
 
-## 13. アセット管理
-
-ゲーム標準アセットとユーザーコンテンツを分離する。
-
-```text
-assets/     標準アセット
-stages/     外部ステージ
-mods/       MOD
-userdata/   設定・ログ等
-```
-
-PyInstaller `--onedir` でも、ユーザーが `stages/` と `mods/` を簡単に追加・削除できる配置とする。
-
----
-
-## 14. パス解決
-
-開発実行と PyInstaller ビルドの双方で同じコードを利用できるよう、パス解決を一元化する。
-
-例えば `paths.py` 相当のモジュールを用意し、以下を提供する。
-
-- application directory
-- assets directory
-- stages directory
-- mods directory
-- userdata directory
-
-各モジュールで `__file__` やカレントディレクトリを直接参照しない。
-
----
-
-## 15. ビルド
-
-### 15.1 Windows
-
-PyInstaller の `--onedir` を標準とする。
-
-概念例:
-
-```bat
-python -m PyInstaller ^
-  --clean ^
-  --noconfirm ^
-  --onedir ^
-  --windowed ^
-  --name BreakoutForge ^
-  src/breakout_forge/__main__.py
-```
-
-### 15.2 配布物
-
-```text
-BreakoutForge/
-├─ BreakoutForge.exe
-├─ _internal/
-├─ assets/
-├─ stages/
-├─ mods/
-└─ userdata/   # 初回起動時生成でも可
-```
-
-外部コンテンツを `_internal/` 内へ隠さないことを基本とする。
-
----
-
-## 16. CI
-
-最低限、GitHub Actions で以下を確認する。
-
-```text
-push / pull_request
-        ↓
-依存関係インストール
-        ↓
-lint / test
-        ↓
-import / smoke test
-        ↓
-PyInstaller build
-        ↓
-artifact 保存
-```
-
-初期段階では Windows ビルドを優先する。
-
-CI が常に「ゲームとして配布可能な状態」を確認することを目標にする。
-
----
-
-## 17. テスト方針
-
-ゲームループ全体より、ロジック単位を優先してテストする。
-
-初期対象:
-
-- Cell の layer 遷移
-- HP 減少
-- layer 破壊
-- Cell 完全破壊
-- ステージ JSON 読み込み
-- 不正 JSON のエラー処理
-- 画像グリッド分割
-- MOD manifest 読み込み
-- イベント登録 / 発火
-- パス解決
-
-pygame の描画そのものへ過度に依存したテストは避ける。
-
----
-
-## 18. エラー処理
-
-ユーザーが追加するコンテンツは壊れている可能性があることを前提とする。
-
-### ステージ読み込み失敗
-
-- アプリ全体をクラッシュさせない
-- どのファイルに問題があるか表示する
-- ログへ詳細を保存する
-
-### MOD 読み込み失敗
-
-- 可能ならその MOD のみ無効化する
-- 他 MOD と本体は継続する
-- traceback をログへ記録する
-
-### 画像読み込み失敗
-
-- 対応外形式 / 破損画像として明示する
-- 代替画像またはステージ選択画面へ戻す
-
----
-
-## 19. 標準ゲーム仕様 v0.1
-
-最初のプレイ可能版では以下のみ実装する。
-
-- 800x600 程度のウィンドウ
-- パドル1本
-- ボール1個
-- 左右移動
-- 壁反射
-- パドル反射
-- ブロック反射
-- Cell / Layer 破壊
-- 全対象破壊でクリア
-- ボールが下へ落ちたらゲームオーバー
-- リスタート
-- 標準ステージ1つ
-
-高度な演出は後回しとする。
-
----
-
-## 20. 開発フェーズ
-
-### Phase 1: Core
-
-- プロジェクト雛形
-- pygame 起動
-- Game loop
-- Paddle
-- Ball
-- 衝突
-- Board / Cell / BlockLayer
-- 通常ステージ
-
-### Phase 2: Layer System
-
-- 複数 Layer
-- HP
-- レイヤー切り替え
-- クリア条件
-
-### Phase 3: Image Stage
-
-- PNG / JPEG / WebP 読み込み
-- グリッド分割
-- 画像ステージ
-- 多層画像
-- stage.json
-
-### Phase 4: Packaging
-
-- PyInstaller `--onedir`
-- build.bat
-- CI ビルド
-- artifact 出力
-
-### Phase 5: Modding
-
-- mod.json
-- MOD loader
-- Event system
-- 公開 API
-- Example MOD
-
-### Phase 6: Tooling
-
-- ステージ選択
-- 画像選択
-- ドラッグ & ドロップ
-- GUI ステージエディタ
-- MOD 管理
-
----
-
-## 21. 初期非目標
-
-v0.1 では次を必須にしない。
-
-- オンライン対戦
-- ランキングサーバー
-- MOD の完全サンドボックス
-- 高度な物理エンジン
-- 3D
-- ECS
-- スクリプト言語の自作
-- 大規模 GUI エディタ
-
-小さいコードベースのまま、拡張可能性を確保することを優先する。
-
----
-
-## 22. 設計上の重要原則
-
-Breakout Forge の基本モデルは次のように保つ。
-
-```text
-Game
- ├─ Paddle(s)
- ├─ Ball(s)
- └─ Board
-     └─ Cell
-         └─ BlockLayer [0..n]
-```
-
-そしてコンテンツ側は、
-
-```text
-Stage data
-   ↓
-Board / Cell / BlockLayer を生成
-```
-
-MOD 側は、
-
-```text
-Public API / Events
-   ↓
-Game に機能を追加
-```
-
-という境界を守る。
-
-これにより、通常のブロック崩し、画像を壊すゲーム、多層画像を剥がすゲーム、特殊ルールを持つ MOD ゲームを同一のコアで扱えるようにする。
-
----
-
-## 23. 最初の完成条件
-
-最初のマイルストーンでは、以下を満たした時点を「最低限完成」とする。
-
-- リポジトリを clone して依存関係を導入できる
-- 開発環境からゲームを起動できる
-- 標準ブロック崩しを最後まで遊べる
-- 任意画像をステージとして読み込める
-- 2枚以上の画像レイヤーを順番に破壊できる
-- stage.json からステージを生成できる
-- `build.bat` で Windows onedir ビルドできる
-- CI でテストとビルドが通る
-- `mods/` から Example MOD を読み込める
-
-この状態を v0.1 系の基準とする。
+## 14. テスト方針
+
+- common + stage の再帰マージ
+- 未指定値の common 継承
+- 不正型 / 範囲外値の検証
+- Board / image split の生成
+- Layer 多層破壊
+- MOD 読込失敗境界
+- source 実行と onedir 実行の外部パス解決
+
+設定解決は pygame なしで単体テスト可能にする。
