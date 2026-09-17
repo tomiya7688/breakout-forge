@@ -7,18 +7,19 @@
     "title": "Breakout Forge"
   },
   "gameplay": {
-    "ball_speed": 360.0,
+    "ball_speed": 360,
     "ball_size": 14,
     "ball_initial_direction": {
       "x": 0.70710678,
       "y": -0.70710678
     },
-    "paddle_speed": 520.0,
+    "paddle_speed": 520,
     "paddle_size": {
       "width": 120,
       "height": 18
     },
-    "paddle_bottom_margin": 36
+    "paddle_bottom_margin": 36,
+    "ball_paddle_gap": 4
   },
   "stage_size": {
     "columns": 20,
@@ -45,5 +46,34 @@
     "width": 800,
     "height": 600,
     "fit": "contain"
+  },
+  "appearance": {
+    "background_rgb": [
+      16,
+      18,
+      24
+    ],
+    "block_rgb": [
+      110,
+      170,
+      230
+    ],
+    "paddle_rgb": [
+      230,
+      230,
+      230
+    ],
+    "ball_rgb": [
+      230,
+      230,
+      230
+    ],
+    "text_rgb": [
+      230,
+      230,
+      230
+    ],
+    "overlay_font_size": 36,
+    "score_font_size": 28
   }
 }
