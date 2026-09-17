@@ -8,13 +8,16 @@
       "height": 18
     }
   },
-  "board": {
+  "stage_size": {
     "columns": 20,
     "rows": 15
   },
-  "image_split": {
-    "columns": 20,
-    "rows": 15
+  "break_image": {
+    "split": {
+      "columns": 20,
+      "rows": 15
+    },
+    "load_mode": "keep_background"
   },
   "playfield": {
     "fit": "contain"
