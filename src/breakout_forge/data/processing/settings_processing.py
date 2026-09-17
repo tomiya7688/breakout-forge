@@ -9,6 +9,7 @@ from typing import Any
 
 from breakout_forge.contracts.settings import (
     BreakImageSettings,
+    DisplaySettings,
     GameplaySettings,
     GridSettings,
     PlayfieldSettings,
@@ -65,26 +66,18 @@ def _validate_format_version(raw: dict[str, Any], source_name: str) -> None:
         raise SettingsError(f"unsupported format_version in {source_name}")
 
 
-def resolve_stage_settings(common_path: Path, stage_path: Path) -> ResolvedStageSettings:
-    """Resolve common defaults plus optional per-stage overrides."""
-
-    common = _read_json(common_path)
-    stage = _read_json(stage_path)
-    _validate_format_version(common, "common settings")
-    _validate_format_version(stage, "stage settings")
-
-    stage_settings = stage.get("settings", {})
-    if not isinstance(stage_settings, dict):
-        raise SettingsError("stage.settings must be an object")
-
-    merged = _recursive_merge(common, stage_settings)
-
+def _convert_resolved_settings(merged: dict[str, Any]) -> ResolvedStageSettings:
+    display = _require_mapping(merged, "display")
     gameplay = _require_mapping(merged, "gameplay")
     paddle_size = _require_mapping(gameplay, "paddle_size")
     stage_size = _require_mapping(merged, "stage_size")
     break_image = _require_mapping(merged, "break_image")
     break_image_split = _require_mapping(break_image, "split")
     playfield = _require_mapping(merged, "playfield")
+
+    title = display.get("title")
+    if not isinstance(title, str) or not title.strip():
+        raise SettingsError("display.title must be a non-empty string")
 
     fit = playfield.get("fit")
     if fit not in {"contain", "cover", "stretch"}:
@@ -97,6 +90,12 @@ def resolve_stage_settings(common_path: Path, stage_path: Path) -> ResolvedStage
         )
 
     return ResolvedStageSettings(
+        display=DisplaySettings(
+            width=_positive_int(display.get("width"), "display.width"),
+            height=_positive_int(display.get("height"), "display.height"),
+            fps=_positive_int(display.get("fps"), "display.fps"),
+            title=title,
+        ),
         gameplay=GameplaySettings(
             ball_speed=_positive_number(gameplay.get("ball_speed"), "gameplay.ball_speed"),
             paddle_speed=_positive_number(
@@ -128,3 +127,26 @@ def resolve_stage_settings(common_path: Path, stage_path: Path) -> ResolvedStage
         ),
         playfield=PlayfieldSettings(fit=fit),
     )
+
+
+def resolve_common_settings(common_path: Path) -> ResolvedStageSettings:
+    """Resolve common defaults without a stage-specific override."""
+
+    common = _read_json(common_path)
+    _validate_format_version(common, "common settings")
+    return _convert_resolved_settings(common)
+
+
+def resolve_stage_settings(common_path: Path, stage_path: Path) -> ResolvedStageSettings:
+    """Resolve common defaults plus optional per-stage overrides."""
+
+    common = _read_json(common_path)
+    stage = _read_json(stage_path)
+    _validate_format_version(common, "common settings")
+    _validate_format_version(stage, "stage settings")
+
+    stage_settings = stage.get("settings", {})
+    if not isinstance(stage_settings, dict):
+        raise SettingsError("stage.settings must be an object")
+
+    return _convert_resolved_settings(_recursive_merge(common, stage_settings))
