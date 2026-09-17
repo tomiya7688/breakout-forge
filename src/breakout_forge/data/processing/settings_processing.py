@@ -15,6 +15,7 @@ from breakout_forge.contracts.settings import (
     PlayfieldSettings,
     ResolvedStageSettings,
     SizeSettings,
+    VectorSettings,
 )
 
 
@@ -48,6 +49,12 @@ def _positive_number(value: Any, name: str) -> float:
     return float(value)
 
 
+def _number(value: Any, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise SettingsError(f"{name} must be a number")
+    return float(value)
+
+
 def _positive_int(value: Any, name: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
         raise SettingsError(f"{name} must be a positive integer")
@@ -70,6 +77,7 @@ def _convert_resolved_settings(merged: dict[str, Any]) -> ResolvedStageSettings:
     display = _require_mapping(merged, "display")
     gameplay = _require_mapping(merged, "gameplay")
     paddle_size = _require_mapping(gameplay, "paddle_size")
+    ball_direction = _require_mapping(gameplay, "ball_initial_direction")
     stage_size = _require_mapping(merged, "stage_size")
     break_image = _require_mapping(merged, "break_image")
     break_image_split = _require_mapping(break_image, "split")
@@ -89,6 +97,11 @@ def _convert_resolved_settings(merged: dict[str, Any]) -> ResolvedStageSettings:
             "break_image.load_mode must be keep_background or remove_background"
         )
 
+    direction_x = _number(ball_direction.get("x"), "gameplay.ball_initial_direction.x")
+    direction_y = _number(ball_direction.get("y"), "gameplay.ball_initial_direction.y")
+    if direction_x == 0 and direction_y == 0:
+        raise SettingsError("gameplay.ball_initial_direction must not be zero")
+
     return ResolvedStageSettings(
         display=DisplaySettings(
             width=_positive_int(display.get("width"), "display.width"),
@@ -98,16 +111,15 @@ def _convert_resolved_settings(merged: dict[str, Any]) -> ResolvedStageSettings:
         ),
         gameplay=GameplaySettings(
             ball_speed=_positive_number(gameplay.get("ball_speed"), "gameplay.ball_speed"),
-            paddle_speed=_positive_number(
-                gameplay.get("paddle_speed"), "gameplay.paddle_speed"
-            ),
+            ball_size=_positive_int(gameplay.get("ball_size"), "gameplay.ball_size"),
+            ball_initial_direction=VectorSettings(x=direction_x, y=direction_y),
+            paddle_speed=_positive_number(gameplay.get("paddle_speed"), "gameplay.paddle_speed"),
             paddle_size=SizeSettings(
-                width=_positive_int(
-                    paddle_size.get("width"), "gameplay.paddle_size.width"
-                ),
-                height=_positive_int(
-                    paddle_size.get("height"), "gameplay.paddle_size.height"
-                ),
+                width=_positive_int(paddle_size.get("width"), "gameplay.paddle_size.width"),
+                height=_positive_int(paddle_size.get("height"), "gameplay.paddle_size.height"),
+            ),
+            paddle_bottom_margin=_positive_int(
+                gameplay.get("paddle_bottom_margin"), "gameplay.paddle_bottom_margin"
             ),
         ),
         stage_size=GridSettings(
@@ -116,37 +128,31 @@ def _convert_resolved_settings(merged: dict[str, Any]) -> ResolvedStageSettings:
         ),
         break_image=BreakImageSettings(
             split=GridSettings(
-                columns=_positive_int(
-                    break_image_split.get("columns"), "break_image.split.columns"
-                ),
-                rows=_positive_int(
-                    break_image_split.get("rows"), "break_image.split.rows"
-                ),
+                columns=_positive_int(break_image_split.get("columns"), "break_image.split.columns"),
+                rows=_positive_int(break_image_split.get("rows"), "break_image.split.rows"),
             ),
             load_mode=load_mode,
         ),
-        playfield=PlayfieldSettings(fit=fit),
+        playfield=PlayfieldSettings(
+            width=_positive_int(playfield.get("width"), "playfield.width"),
+            height=_positive_int(playfield.get("height"), "playfield.height"),
+            fit=fit,
+        ),
     )
 
 
 def resolve_common_settings(common_path: Path) -> ResolvedStageSettings:
-    """Resolve common defaults without a stage-specific override."""
-
     common = _read_json(common_path)
     _validate_format_version(common, "common settings")
     return _convert_resolved_settings(common)
 
 
 def resolve_stage_settings(common_path: Path, stage_path: Path) -> ResolvedStageSettings:
-    """Resolve common defaults plus optional per-stage overrides."""
-
     common = _read_json(common_path)
     stage = _read_json(stage_path)
     _validate_format_version(common, "common settings")
     _validate_format_version(stage, "stage settings")
-
     stage_settings = stage.get("settings", {})
     if not isinstance(stage_settings, dict):
         raise SettingsError("stage.settings must be an object")
-
     return _convert_resolved_settings(_recursive_merge(common, stage_settings))
