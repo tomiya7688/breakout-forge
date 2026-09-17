@@ -42,6 +42,18 @@ class GameplaySettings:
 
 
 @dataclass(frozen=True, slots=True)
+class StandardStageSettings:
+    left_margin: int
+    right_margin: int
+    top_margin: int
+    block_area_height: int
+    gap_x: int
+    gap_y: int
+    block_hp: int
+    score_per_layer: int
+
+
+@dataclass(frozen=True, slots=True)
 class BreakImageSettings:
     split: GridSettings
     load_mode: str
@@ -59,5 +71,6 @@ class ResolvedStageSettings:
     display: DisplaySettings
     gameplay: GameplaySettings
     stage_size: GridSettings
+    standard_stage: StandardStageSettings
     break_image: BreakImageSettings
     playfield: PlayfieldSettings
