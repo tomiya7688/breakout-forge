@@ -62,6 +62,12 @@ def _positive_int(value: Any, name: str) -> int:
     return value
 
 
+def _non_negative_int(value: Any, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise SettingsError(f"{name} must be a non-negative integer")
+    return value
+
+
 def _require_mapping(parent: dict[str, Any], key: str) -> dict[str, Any]:
     value = parent.get(key)
     if not isinstance(value, dict):
@@ -129,16 +135,16 @@ def _convert_resolved_settings(merged: dict[str, Any]) -> ResolvedStageSettings:
             rows=_positive_int(stage_size.get("rows"), "stage_size.rows"),
         ),
         standard_stage=StandardStageSettings(
-            left_margin=_positive_int(standard_stage.get("left_margin"), "standard_stage.left_margin"),
-            right_margin=_positive_int(standard_stage.get("right_margin"), "standard_stage.right_margin"),
-            top_margin=_positive_int(standard_stage.get("top_margin"), "standard_stage.top_margin"),
+            left_margin=_non_negative_int(standard_stage.get("left_margin"), "standard_stage.left_margin"),
+            right_margin=_non_negative_int(standard_stage.get("right_margin"), "standard_stage.right_margin"),
+            top_margin=_non_negative_int(standard_stage.get("top_margin"), "standard_stage.top_margin"),
             block_area_height=_positive_int(
                 standard_stage.get("block_area_height"), "standard_stage.block_area_height"
             ),
-            gap_x=_positive_int(standard_stage.get("gap_x"), "standard_stage.gap_x"),
-            gap_y=_positive_int(standard_stage.get("gap_y"), "standard_stage.gap_y"),
+            gap_x=_non_negative_int(standard_stage.get("gap_x"), "standard_stage.gap_x"),
+            gap_y=_non_negative_int(standard_stage.get("gap_y"), "standard_stage.gap_y"),
             block_hp=_positive_int(standard_stage.get("block_hp"), "standard_stage.block_hp"),
-            score_per_layer=_positive_int(
+            score_per_layer=_non_negative_int(
                 standard_stage.get("score_per_layer"), "standard_stage.score_per_layer"
             ),
         ),
