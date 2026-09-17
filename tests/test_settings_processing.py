@@ -26,6 +26,16 @@ COMMON = '''{
     "paddle_bottom_margin": 36
   },
   "stage_size": {"columns": 20, "rows": 15},
+  "standard_stage": {
+    "left_margin": 40,
+    "right_margin": 40,
+    "top_margin": 60,
+    "block_area_height": 240,
+    "gap_x": 2,
+    "gap_y": 2,
+    "block_hp": 1,
+    "score_per_layer": 100
+  },
   "break_image": {
     "split": {"columns": 20, "rows": 15},
     "load_mode": "keep_background"
@@ -50,6 +60,7 @@ def test_stage_overrides_only_selected_common_values(tmp_path: Path) -> None:
               "paddle_size": {"width": 160}
             },
             "stage_size": {"columns": 24},
+            "standard_stage": {"score_per_layer": 250},
             "break_image": {
               "split": {"rows": 18},
               "load_mode": "remove_background"
@@ -71,6 +82,8 @@ def test_stage_overrides_only_selected_common_values(tmp_path: Path) -> None:
     assert resolved.gameplay.paddle_bottom_margin == 36
     assert resolved.stage_size.columns == 24
     assert resolved.stage_size.rows == 15
+    assert resolved.standard_stage.score_per_layer == 250
+    assert resolved.standard_stage.block_hp == 1
     assert resolved.break_image.split.columns == 20
     assert resolved.break_image.split.rows == 18
     assert resolved.break_image.load_mode == "remove_background"
@@ -90,6 +103,7 @@ def test_common_settings_are_resolved_without_stage(tmp_path: Path) -> None:
     assert resolved.gameplay.ball_initial_direction.x > 0
     assert resolved.gameplay.ball_initial_direction.y < 0
     assert resolved.stage_size.columns == 20
+    assert resolved.standard_stage.block_area_height == 240
     assert resolved.break_image.split.rows == 15
     assert resolved.playfield.width == 800
 
