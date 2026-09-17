@@ -22,18 +22,31 @@ The application is separated into `ui`, `process`, and `data` responsibility are
 - Data must not know UI or game rules.
 - Prefer one module/class/function per responsibility where practical.
 
+## Data-Driven Rule
+Values that a stage author or user is likely to tune belong outside the program.
+
+- Defaults: `config/common.json`
+- Stage-specific overrides: `stages/<stage>/stage.json`
+- Resolution: recursively merge stage settings over common settings.
+- Missing stage keys inherit common values.
+- Keep normal gameplay tuning out of Python constants.
+
+At minimum externalize ball speed, paddle speed/size, board dimensions, image split dimensions, playfield fit, layer HP, and asset paths. New tunable values should default to external data unless there is a strong reason not to.
+
 ## Task Routing
 - App window/input/rendering: `src/breakout_forge/ui/`
 - Game rules/state/update: `src/breakout_forge/process/`
-- File/config/stage/mod persistence: `src/breakout_forge/data/`
+- File/config/stage/mod persistence and settings merge: `src/breakout_forge/data/`
 - Cross-layer contracts: `src/breakout_forge/contracts/`
+- Common defaults: `config/common.json`
+- Stage overrides/content: `stages/<stage>/stage.json`
 - Tests: `tests/`
 - Product requirements: `DESIGN.md`
 
 ## Change Routing
 - UI-only change -> UI processing + focused UI tests.
 - Game-rule change -> Process processing + focused process tests.
-- File/schema/path change -> Data processing + focused data tests.
+- File/schema/path/settings change -> Data processing + focused data tests.
 - Cross-layer contract change -> inspect both adjacent layers and broader tests.
 - Packaging change -> source validation + packaged artifact smoke test.
 
