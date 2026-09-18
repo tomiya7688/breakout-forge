@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from breakout_forge.contracts.image_asset import PreparedImageAsset
+from breakout_forge.contracts.paths import ExternalPaths
 from breakout_forge.contracts.settings import BreakImageSettings
 from breakout_forge.contracts.stage import ResolvedStageDefinition, StageLayerDefinition
 from breakout_forge.data.commander import DataCommander
@@ -32,3 +33,6 @@ class DataMessenger:
 
     def load_mods(self, mods_dir: Path, api: ModApi):
         return self._commander.load_mods(mods_dir, api)
+
+    def resolve_paths(self, base_dir: Path | None = None) -> ExternalPaths:
+        return self._commander.resolve_paths(base_dir)
