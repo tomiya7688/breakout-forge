@@ -1,4 +1,4 @@
-"""Process-layer runtime for one destructible image stage."""
+"""Process-layer runtime for destructible single or layered image stages."""
 
 from __future__ import annotations
 
@@ -21,25 +21,33 @@ from breakout_forge.process.processing.collision import BoardCollisionResult
 
 
 class ImageStageProcessing:
-    """Build a destructible Board from one prepared source image.
+    """Build a destructible Board from one or more prepared source images.
 
-    stage_size remains the stage logical world-size setting.
-    The destruction grid is intentionally driven by break_image.split.
+    stage.layers are interpreted bottom-to-top. Every image layer uses its own
+    source-image dimensions and source rects, while all layers at the same
+    (column, row) share one destination Cell.
     """
 
     def __init__(
         self,
         stage: ResolvedStageDefinition,
-        layer: StageLayerDefinition,
-        asset: PreparedImageAsset,
+        layers: tuple[StageLayerDefinition, ...],
+        assets: tuple[PreparedImageAsset, ...],
         playfield: PlayfieldSettings,
         target_area: StandardStageSettings,
     ) -> None:
-        if layer.id != asset.id:
-            raise ValueError("image layer and prepared asset id must match")
+        if not layers:
+            raise ValueError("image stage requires at least one image layer")
+        asset_by_id = {asset.id: asset for asset in assets}
+        if len(asset_by_id) != len(assets):
+            raise ValueError("prepared image asset ids must be unique")
+        for layer in layers:
+            if layer.id not in asset_by_id:
+                raise ValueError(f"missing prepared asset for image layer: {layer.id}")
+
         self._stage = stage
-        self._layer = layer
-        self._asset = asset
+        self._layers = layers
+        self._assets = asset_by_id
         self._playfield = playfield
         self._target_area = target_area
         self._score = 0
@@ -54,90 +62,109 @@ class ImageStageProcessing:
     def score(self) -> int:
         return self._score
 
-    def _destination_image_rect(self) -> RectValue:
-        available_x = float(self._target_area.left_margin)
-        available_y = float(self._target_area.top_margin)
-        available_width = float(
+    def _available_rect(self) -> RectValue:
+        width = float(
             self._playfield.width
             - self._target_area.left_margin
             - self._target_area.right_margin
         )
-        available_height = float(self._target_area.block_area_height)
-        if available_width <= 0 or available_height <= 0:
+        height = float(self._target_area.block_area_height)
+        if width <= 0 or height <= 0:
             raise ValueError("image stage target area must be positive")
+        return RectValue(
+            x=float(self._target_area.left_margin),
+            y=float(self._target_area.top_margin),
+            width=width,
+            height=height,
+        )
 
-        source_width = float(self._asset.width)
-        source_height = float(self._asset.height)
+    def _destination_rect_for(self, asset: PreparedImageAsset) -> RectValue:
+        available = self._available_rect()
         fit = self._stage.settings.playfield.fit
 
         if fit == "stretch":
-            return RectValue(
-                x=available_x,
-                y=available_y,
-                width=available_width,
-                height=available_height,
-            )
+            return available
 
+        source_width = float(asset.width)
+        source_height = float(asset.height)
         if fit == "contain":
-            scale = min(available_width / source_width, available_height / source_height)
+            scale = min(
+                available.width / source_width,
+                available.height / source_height,
+            )
         elif fit == "cover":
-            scale = max(available_width / source_width, available_height / source_height)
+            scale = max(
+                available.width / source_width,
+                available.height / source_height,
+            )
         else:
             raise ValueError(f"unsupported image fit: {fit}")
 
         width = source_width * scale
         height = source_height * scale
         return RectValue(
-            x=available_x + (available_width - width) / 2.0,
-            y=available_y + (available_height - height) / 2.0,
+            x=available.x + (available.width - width) / 2.0,
+            y=available.y + (available.height - height) / 2.0,
             width=width,
             height=height,
         )
 
+    def _shared_cell_rect(self, column: int, row: int) -> RectValue:
+        split = self._stage.settings.break_image.split
+        available = self._available_rect()
+        x0 = available.x + available.width * column / split.columns
+        x1 = available.x + available.width * (column + 1) / split.columns
+        y0 = available.y + available.height * row / split.rows
+        y1 = available.y + available.height * (row + 1) / split.rows
+        return RectValue(x=x0, y=y0, width=x1 - x0, height=y1 - y0)
+
+    def _source_rect(
+        self,
+        asset: PreparedImageAsset,
+        column: int,
+        row: int,
+    ) -> SourceRectValue:
+        split = self._stage.settings.break_image.split
+        x0 = column * asset.width // split.columns
+        x1 = (column + 1) * asset.width // split.columns
+        y0 = row * asset.height // split.rows
+        y1 = (row + 1) * asset.height // split.rows
+        return SourceRectValue(
+            x=x0,
+            y=y0,
+            width=x1 - x0,
+            height=y1 - y0,
+        )
+
     def reset(self) -> Board:
         split = self._stage.settings.break_image.split
-        destination = self._destination_image_rect()
         cells: list[BlockCell] = []
 
         for row in range(split.rows):
-            source_y0 = row * self._asset.height // split.rows
-            source_y1 = (row + 1) * self._asset.height // split.rows
-            dest_y0 = destination.y + destination.height * source_y0 / self._asset.height
-            dest_y1 = destination.y + destination.height * source_y1 / self._asset.height
-
             for column in range(split.columns):
-                source_x0 = column * self._asset.width // split.columns
-                source_x1 = (column + 1) * self._asset.width // split.columns
-                dest_x0 = destination.x + destination.width * source_x0 / self._asset.width
-                dest_x1 = destination.x + destination.width * source_x1 / self._asset.width
-
                 cell = BlockCell(
                     column=column,
                     row=row,
-                    rect=RectValue(
-                        x=dest_x0,
-                        y=dest_y0,
-                        width=dest_x1 - dest_x0,
-                        height=dest_y1 - dest_y0,
-                    ),
+                    rect=self._shared_cell_rect(column, row),
                 )
-                if (column, row) in self._asset.active_tiles:
-                    source_rect = SourceRectValue(
-                        x=source_x0,
-                        y=source_y0,
-                        width=source_x1 - source_x0,
-                        height=source_y1 - source_y0,
-                    )
+
+                for layer in self._layers:
+                    asset = self._assets[layer.id]
+                    if (column, row) not in asset.active_tiles:
+                        continue
                     cell.push_layer(
                         BlockLayer(
-                            id=f"{self._layer.id}:{column}:{row}",
-                            hp=self._layer.hp,
-                            max_hp=self._layer.hp,
-                            asset_id=self._asset.id,
-                            source_rect=source_rect,
-                            collidable=self._layer.collidable,
-                            destructible=self._layer.destructible,
-                            visible=self._layer.visible,
+                            id=f"{layer.id}:{column}:{row}",
+                            hp=layer.hp,
+                            max_hp=layer.hp,
+                            asset_id=asset.id,
+                            source_rect=self._source_rect(asset, column, row),
+                            collidable=layer.collidable,
+                            destructible=layer.destructible,
+                            visible=layer.visible,
+                            metadata={
+                                "image_destination": self._destination_rect_for(asset),
+                            },
                         )
                     )
                 cells.append(cell)
@@ -170,15 +197,22 @@ class ImageStageProcessing:
             if layer is None:
                 continue
             source = layer.source_rect
+            destination = layer.metadata.get("image_destination")
+            rect = cell.rect if not isinstance(destination, RectValue) else RectValue(
+                x=destination.x + destination.width * cell.column / self._board.columns,
+                y=destination.y + destination.height * cell.row / self._board.rows,
+                width=destination.width / self._board.columns,
+                height=destination.height / self._board.rows,
+            )
             snapshots.append(
                 BlockSnapshot(
                     column=cell.column,
                     row=cell.row,
                     rect=RectSnapshot(
-                        x=cell.rect.x,
-                        y=cell.rect.y,
-                        width=cell.rect.width,
-                        height=cell.rect.height,
+                        x=rect.x,
+                        y=rect.y,
+                        width=rect.width,
+                        height=rect.height,
                     ),
                     asset_id=layer.asset_id,
                     source_rect=(
