@@ -18,8 +18,9 @@ class DataCommander:
         self,
         common_path: Path,
         stage_path: Path,
+        user_path: Path | None = None,
     ) -> ResolvedStageDefinition:
-        return load_stage_definition(common_path, stage_path)
+        return load_stage_definition(common_path, stage_path, user_path)
 
     def prepare_image(
         self,
