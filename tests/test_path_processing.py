@@ -59,3 +59,13 @@ def test_require_file_has_clear_missing_file_error(tmp_path: Path) -> None:
 
     with pytest.raises(ExternalPathError, match="common settings not found"):
         require_file(missing, "common settings")
+
+
+def test_explicit_relative_path_is_anchored_to_external_base(tmp_path: Path) -> None:
+    paths = resolve_external_paths(tmp_path / "game")
+
+    resolved = paths.resolve(Path("stages/sample/stage.json"))
+
+    assert resolved == (
+        tmp_path / "game" / "stages" / "sample" / "stage.json"
+    ).resolve()
