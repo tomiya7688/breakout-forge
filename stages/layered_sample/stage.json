@@ -1,0 +1,29 @@
+{
+  "format_version": 1,
+  "id": "layered_sample",
+  "name": "Layered Sample",
+  "settings": {
+    "break_image": {
+      "split": {"columns": 20, "rows": 12},
+      "load_mode": "keep_background"
+    }
+  },
+  "layers": [
+    {
+      "id": "bottom",
+      "image": "bottom.png",
+      "hp": 1,
+      "collidable": true,
+      "destructible": true,
+      "visible": true
+    },
+    {
+      "id": "top",
+      "image": "top.png",
+      "hp": 2,
+      "collidable": true,
+      "destructible": true,
+      "visible": true
+    }
+  ]
+}
