@@ -17,5 +17,8 @@ class ExternalPaths:
     common_settings: Path
     user_settings: Path
 
+    def resolve(self, path: Path) -> Path:
+        return path.resolve() if path.is_absolute() else (self.base_dir / path).resolve()
+
     def stage_json(self, stage_id: str) -> Path:
         return self.stages_dir / stage_id / "stage.json"
