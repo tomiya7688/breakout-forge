@@ -19,9 +19,9 @@ class RuntimeProcessing:
         messenger: UiMessenger,
         display_settings: DisplaySettings,
         appearance_settings: AppearanceSettings,
-        prepared_assets: tuple[PreparedImageAsset, ...] = (),
         event_processing: EventProcessing | None = None,
         render_processing: RenderProcessing | None = None,
+        prepared_assets: tuple[PreparedImageAsset, ...] = (),
     ) -> None:
         self._messenger = messenger
         self._display_settings = display_settings
