@@ -38,6 +38,10 @@ def create_application(
     user_settings = user_settings_path or paths.user_settings
     mods = mods_dir or paths.mods_dir
 
+    data_messenger.require_file(common, "common settings")
+    if stage_path is not None:
+        data_messenger.require_file(stage_path, "stage definition")
+
     mod_api = ModApi()
     data_messenger.load_mods(mods, mod_api)
     prepared_assets: tuple[PreparedImageAsset, ...] = ()
