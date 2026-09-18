@@ -6,20 +6,26 @@
     "gameplay": {
       "ball_speed": 420.0
     },
-    "board": {
+    "stage_size": {
       "columns": 24,
       "rows": 18
     },
-    "image_split": {
-      "columns": 24,
-      "rows": 18
+    "break_image": {
+      "split": {
+        "columns": 24,
+        "rows": 18
+      },
+      "load_mode": "keep_background"
     }
   },
   "layers": [
     {
       "id": "main",
       "image": "main.png",
-      "hp": 1
+      "hp": 1,
+      "collidable": true,
+      "destructible": true,
+      "visible": true
     }
   ]
 }
