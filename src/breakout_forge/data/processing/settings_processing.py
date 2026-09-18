@@ -182,6 +182,9 @@ def _convert_resolved_settings(merged: dict[str, Any]) -> ResolvedStageSettings:
                 rows=_positive_int(break_image_split.get("rows"), "break_image.split.rows"),
             ),
             load_mode=load_mode,
+            background_tolerance=_non_negative_int(
+                break_image.get("background_tolerance", 16), "break_image.background_tolerance"
+            ),
         ),
         playfield=PlayfieldSettings(
             width=_positive_int(playfield.get("width"), "playfield.width"),
