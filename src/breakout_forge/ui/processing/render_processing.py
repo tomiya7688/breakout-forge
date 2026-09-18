@@ -66,6 +66,26 @@ class RenderProcessing:
         self._tile_cache[key] = tile
         return tile
 
+    @staticmethod
+    def _scaled_rect(
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+        scale_x: float,
+        scale_y: float,
+    ) -> pygame.Rect:
+        left = round(x * scale_x)
+        top = round(y * scale_y)
+        right = round((x + width) * scale_x)
+        bottom = round((y + height) * scale_y)
+        return pygame.Rect(
+            left,
+            top,
+            max(1, right - left),
+            max(1, bottom - top),
+        )
+
     def render(self, screen: pygame.Surface, result: FrameResult) -> None:
         screen.fill(self._appearance.background_rgb)
 
@@ -76,11 +96,13 @@ class RenderProcessing:
 
             for block in gameplay.blocks:
                 rect = block.rect
-                dest = pygame.Rect(
-                    round(rect.x * scale_x),
-                    round(rect.y * scale_y),
-                    max(1, round(rect.width * scale_x)),
-                    max(1, round(rect.height * scale_y)),
+                dest = self._scaled_rect(
+                    rect.x,
+                    rect.y,
+                    rect.width,
+                    rect.height,
+                    scale_x,
+                    scale_y,
                 )
                 if (
                     block.asset_id is not None
