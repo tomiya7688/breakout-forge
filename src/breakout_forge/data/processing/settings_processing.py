@@ -69,6 +69,12 @@ def _non_negative_int(value: Any, name: str) -> int:
     return value
 
 
+def _byte_int(value: Any, name: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 255:
+        raise SettingsError(f"{name} must be an integer from 0 to 255")
+    return value
+
+
 def _rgb(value: Any, name: str) -> tuple[int, int, int]:
     if (
         not isinstance(value, list)
@@ -182,7 +188,7 @@ def _convert_resolved_settings(merged: dict[str, Any]) -> ResolvedStageSettings:
                 rows=_positive_int(break_image_split.get("rows"), "break_image.split.rows"),
             ),
             load_mode=load_mode,
-            background_tolerance=_non_negative_int(
+            background_tolerance=_byte_int(
                 break_image.get("background_tolerance", 16), "break_image.background_tolerance"
             ),
         ),
