@@ -45,11 +45,20 @@ class ImageStageProcessing:
             if layer.id not in asset_by_id:
                 raise ValueError(f"missing prepared asset for image layer: {layer.id}")
 
+        reference = asset_by_id[layers[0].id]
+        for layer in layers[1:]:
+            asset = asset_by_id[layer.id]
+            if asset.width * reference.height != reference.width * asset.height:
+                raise ValueError(
+                    "layered image assets may differ in resolution but must share one aspect ratio"
+                )
+
         self._stage = stage
         self._layers = layers
         self._assets = asset_by_id
         self._playfield = playfield
         self._target_area = target_area
+        self._destination = self._destination_rect_for(reference)
         self._score = 0
         self._board: Board
         self.reset()
@@ -111,11 +120,11 @@ class ImageStageProcessing:
 
     def _shared_cell_rect(self, column: int, row: int) -> RectValue:
         split = self._stage.settings.break_image.split
-        available = self._available_rect()
-        x0 = available.x + available.width * column / split.columns
-        x1 = available.x + available.width * (column + 1) / split.columns
-        y0 = available.y + available.height * row / split.rows
-        y1 = available.y + available.height * (row + 1) / split.rows
+        destination = self._destination
+        x0 = destination.x + destination.width * column / split.columns
+        x1 = destination.x + destination.width * (column + 1) / split.columns
+        y0 = destination.y + destination.height * row / split.rows
+        y1 = destination.y + destination.height * (row + 1) / split.rows
         return RectValue(x=x0, y=y0, width=x1 - x0, height=y1 - y0)
 
     def _source_rect(
@@ -162,9 +171,6 @@ class ImageStageProcessing:
                             collidable=layer.collidable,
                             destructible=layer.destructible,
                             visible=layer.visible,
-                            metadata={
-                                "image_destination": self._destination_rect_for(asset),
-                            },
                         )
                     )
                 cells.append(cell)
@@ -197,13 +203,7 @@ class ImageStageProcessing:
             if layer is None:
                 continue
             source = layer.source_rect
-            destination = layer.metadata.get("image_destination")
-            rect = cell.rect if not isinstance(destination, RectValue) else RectValue(
-                x=destination.x + destination.width * cell.column / self._board.columns,
-                y=destination.y + destination.height * cell.row / self._board.rows,
-                width=destination.width / self._board.columns,
-                height=destination.height / self._board.rows,
-            )
+            rect = cell.rect
             snapshots.append(
                 BlockSnapshot(
                     column=cell.column,
