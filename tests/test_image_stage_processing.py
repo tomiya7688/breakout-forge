@@ -87,8 +87,8 @@ def test_image_split_is_independent_from_stage_size() -> None:
 
     runtime = ImageStageProcessing(
         stage,
-        layer,
-        asset,
+        (layer,),
+        (asset,),
         stage.settings.playfield,
         stage.settings.standard_stage,
     )
@@ -118,8 +118,8 @@ def test_contain_preserves_source_aspect_ratio() -> None:
 
     runtime = ImageStageProcessing(
         stage,
-        layer,
-        asset,
+        (layer,),
+        (asset,),
         stage.settings.playfield,
         stage.settings.standard_stage,
     )
@@ -146,8 +146,8 @@ def test_destroyed_image_tile_disappears_from_render_snapshot() -> None:
     )
     runtime = ImageStageProcessing(
         stage,
-        layer,
-        asset,
+        (layer,),
+        (asset,),
         stage.settings.playfield,
         stage.settings.standard_stage,
     )
@@ -175,8 +175,8 @@ def test_background_removed_empty_tiles_create_empty_board_cells() -> None:
 
     runtime = ImageStageProcessing(
         stage,
-        layer,
-        asset,
+        (layer,),
+        (asset,),
         stage.settings.playfield,
         stage.settings.standard_stage,
     )
