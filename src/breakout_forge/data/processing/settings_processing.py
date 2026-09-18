@@ -215,3 +215,50 @@ def resolve_stage_settings(common_path: Path, stage_path: Path) -> ResolvedStage
     if not isinstance(stage_settings, dict):
         raise SettingsError("stage.settings must be an object")
     return _convert_resolved_settings(_recursive_merge(common, stage_settings))
+
+
+
+def resolve_user_settings(
+    common_path: Path,
+    user_path: Path | None,
+) -> ResolvedStageSettings:
+    common = _read_json(common_path)
+    _validate_format_version(common, "common settings")
+    if user_path is None or not user_path.exists():
+        return _convert_resolved_settings(common)
+
+    user = _read_json(user_path)
+    _validate_format_version(user, "user settings")
+    user_settings = user.get("settings", {})
+    if not isinstance(user_settings, dict):
+        raise SettingsError("user.settings must be an object")
+    return _convert_resolved_settings(_recursive_merge(common, user_settings))
+
+
+def resolve_runtime_settings(
+    common_path: Path,
+    *,
+    user_path: Path | None = None,
+    stage_path: Path | None = None,
+) -> ResolvedStageSettings:
+    common = _read_json(common_path)
+    _validate_format_version(common, "common settings")
+    merged = common
+
+    if user_path is not None and user_path.exists():
+        user = _read_json(user_path)
+        _validate_format_version(user, "user settings")
+        user_settings = user.get("settings", {})
+        if not isinstance(user_settings, dict):
+            raise SettingsError("user.settings must be an object")
+        merged = _recursive_merge(merged, user_settings)
+
+    if stage_path is not None:
+        stage = _read_json(stage_path)
+        _validate_format_version(stage, "stage settings")
+        stage_settings = stage.get("settings", {})
+        if not isinstance(stage_settings, dict):
+            raise SettingsError("stage.settings must be an object")
+        merged = _recursive_merge(merged, stage_settings)
+
+    return _convert_resolved_settings(merged)

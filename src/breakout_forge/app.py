@@ -8,7 +8,9 @@ from pathlib import Path
 from breakout_forge.contracts.image_asset import PreparedImageAsset
 from breakout_forge.data.commander import DataCommander
 from breakout_forge.data.messenger import DataMessenger
-from breakout_forge.data.processing.settings_processing import resolve_common_settings
+from breakout_forge.data.processing.settings_processing import (
+    resolve_runtime_settings,
+)
 from breakout_forge.modding.api import ModApi
 from breakout_forge.process.commander import ProcessCommander
 from breakout_forge.process.messenger import ProcessMessenger
@@ -25,15 +27,35 @@ def create_application(
     common_path: Path | None = None,
     stage_path: Path | None = None,
     mods_dir: Path | None = None,
+    *,
+    base_dir: Path | None = None,
+    user_settings_path: Path | None = None,
 ) -> UiCommander:
-    common = common_path or Path("config/common.json")
     data_messenger = DataMessenger(DataCommander())
+    paths = data_messenger.resolve_paths(base_dir)
+
+    common = paths.resolve(common_path) if common_path is not None else paths.common_settings
+    user_settings = (
+        paths.resolve(user_settings_path)
+        if user_settings_path is not None
+        else paths.user_settings
+    )
+    mods = paths.resolve(mods_dir) if mods_dir is not None else paths.mods_dir
+    stage_file = paths.resolve(stage_path) if stage_path is not None else None
+
+    data_messenger.require_file(common, "common settings")
+    if stage_file is not None:
+        data_messenger.require_file(stage_file, "stage definition")
+
     mod_api = ModApi()
-    data_messenger.load_mods(mods_dir or Path("mods"), mod_api)
+    data_messenger.load_mods(mods, mod_api)
     prepared_assets: tuple[PreparedImageAsset, ...] = ()
 
-    if stage_path is None:
-        settings = resolve_common_settings(common)
+    if stage_file is None:
+        settings = resolve_runtime_settings(
+            common,
+            user_path=user_settings,
+        )
         stage_id = "standard"
         stage_name = "Standard Stage"
         stage_processing = StandardStageProcessing(
@@ -42,7 +64,11 @@ def create_application(
             settings.playfield,
         )
     else:
-        stage = data_messenger.load_stage(common, stage_path)
+        stage = data_messenger.load_stage(
+            common,
+            stage_file,
+            user_settings,
+        )
         settings = stage.settings
         stage_id = stage.id
         stage_name = stage.name

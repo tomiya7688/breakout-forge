@@ -9,7 +9,7 @@ from typing import Any
 from breakout_forge.contracts.stage import ResolvedStageDefinition, StageLayerDefinition
 from breakout_forge.data.processing.settings_processing import (
     SettingsError,
-    resolve_stage_settings,
+    resolve_runtime_settings,
 )
 
 
@@ -65,6 +65,7 @@ def _resolve_image_path(stage_dir: Path, value: Any, name: str) -> Path | None:
 def load_stage_definition(
     common_path: Path,
     stage_path: Path,
+    user_path: Path | None = None,
 ) -> ResolvedStageDefinition:
     """Resolve common/stage settings plus stage metadata and layers."""
 
@@ -72,7 +73,11 @@ def load_stage_definition(
     stage_dir = stage_path.parent
 
     try:
-        settings = resolve_stage_settings(common_path, stage_path)
+        settings = resolve_runtime_settings(
+            common_path,
+            user_path=user_path,
+            stage_path=stage_path,
+        )
     except SettingsError as exc:
         raise StageLoadError(str(exc)) from exc
 

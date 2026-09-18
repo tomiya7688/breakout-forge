@@ -39,6 +39,7 @@ At minimum externalize ball speed, paddle speed/size, stage_size, break_image.sp
 - File/config/stage/mod persistence and settings merge: `src/breakout_forge/data/`
 - Cross-layer contracts: `src/breakout_forge/contracts/`
 - Common defaults: `config/common.json`
+- Optional user overrides: `userdata/settings.json`
 - Stage overrides/content: `stages/<stage>/stage.json`
 - Tests: `tests/`
 - Product requirements: `DESIGN.md`
@@ -61,5 +62,7 @@ At minimum externalize ball speed, paddle speed/size, stage_size, break_image.sp
 
 ## Current State
 A playable standard Breakout path and a single-image destructible stage path exist. Data decodes PNG/JPEG/WebP, optionally removes corner-connected background, and prepares RGBA assets. Process builds the image destruction Board from break_image.split, while UI renders source-rect tiles from the prepared source asset. Multi-layer image stages are implemented: stage layers are bottom-to-top, each Cell shows/collides with the top active layer, and differing image resolutions are allowed only when aspect ratio matches. Python MOD loading is implemented through mods/<mod>/mod.json + entry setup(api), with public event subscriptions and per-MOD/handler error isolation. MODs are unsandboxed and must be treated as trusted code.
+
+External paths are cwd-independent: source execution resolves the repository root from package location, while PyInstaller onedir resolves from the executable directory. userdata is created automatically; settings precedence is common -> user -> stage.
 
 The repository is intentionally small; do not introduce heavy indexes, generated call graphs, or duplicated AI documentation until repeated lookup cost justifies them.
