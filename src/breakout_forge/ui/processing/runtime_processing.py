@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pygame
 
+from breakout_forge.contracts.image_asset import PreparedImageAsset
 from breakout_forge.contracts.settings import AppearanceSettings, DisplaySettings
 from breakout_forge.ui.messenger import UiMessenger
 from breakout_forge.ui.processing.event_processing import EventProcessing
@@ -18,6 +19,7 @@ class RuntimeProcessing:
         messenger: UiMessenger,
         display_settings: DisplaySettings,
         appearance_settings: AppearanceSettings,
+        prepared_assets: tuple[PreparedImageAsset, ...] = (),
         event_processing: EventProcessing | None = None,
         render_processing: RenderProcessing | None = None,
     ) -> None:
@@ -25,7 +27,10 @@ class RuntimeProcessing:
         self._display_settings = display_settings
         self._appearance_settings = appearance_settings
         self._event_processing = event_processing or EventProcessing()
-        self._render_processing = render_processing or RenderProcessing(appearance_settings)
+        self._render_processing = render_processing or RenderProcessing(
+            appearance_settings,
+            prepared_assets=prepared_assets,
+        )
 
     def run(self) -> int:
         pygame.init()
