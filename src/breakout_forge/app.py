@@ -5,12 +5,14 @@ This module only wires layer components together. It does not contain UI, game, 
 
 from pathlib import Path
 
+from breakout_forge.contracts.image_asset import PreparedImageAsset
 from breakout_forge.data.commander import DataCommander
 from breakout_forge.data.messenger import DataMessenger
 from breakout_forge.data.processing.settings_processing import resolve_common_settings
 from breakout_forge.process.commander import ProcessCommander
 from breakout_forge.process.messenger import ProcessMessenger
 from breakout_forge.process.processing.frame_processing import FrameProcessing
+from breakout_forge.process.processing.image_stage_processing import ImageStageProcessing
 from breakout_forge.process.processing.paddle_ball_processing import PaddleBallProcessing
 from breakout_forge.process.processing.standard_stage_processing import StandardStageProcessing
 from breakout_forge.ui.commander import UiCommander
@@ -23,18 +25,46 @@ def create_application(
     stage_path: Path | None = None,
 ) -> UiCommander:
     common = common_path or Path("config/common.json")
+    prepared_assets: tuple[PreparedImageAsset, ...] = ()
 
     if stage_path is None:
         settings = resolve_common_settings(common)
+        stage_processing = StandardStageProcessing(
+            settings.stage_size,
+            settings.standard_stage,
+            settings.playfield,
+        )
     else:
         data_messenger = DataMessenger(DataCommander())
-        settings = data_messenger.load_stage(common, stage_path).settings
+        stage = data_messenger.load_stage(common, stage_path)
+        settings = stage.settings
+        image_layers = tuple(layer for layer in stage.layers if layer.image_path is not None)
 
-    stage_processing = StandardStageProcessing(
-        settings.stage_size,
-        settings.standard_stage,
-        settings.playfield,
-    )
+        if not image_layers:
+            stage_processing = StandardStageProcessing(
+                settings.stage_size,
+                settings.standard_stage,
+                settings.playfield,
+            )
+        else:
+            if len(image_layers) != 1:
+                raise ValueError(
+                    "multiple image layers require the layered-image implementation"
+                )
+            image_layer = image_layers[0]
+            prepared = data_messenger.prepare_image(
+                image_layer,
+                settings.break_image,
+            )
+            prepared_assets = (prepared,)
+            stage_processing = ImageStageProcessing(
+                stage,
+                image_layer,
+                prepared,
+                settings.playfield,
+                settings.standard_stage,
+            )
+
     paddle_ball_processing = PaddleBallProcessing(
         settings.gameplay,
         settings.playfield,
@@ -51,5 +81,6 @@ def create_application(
         ui_messenger,
         settings.display,
         settings.appearance,
+        prepared_assets=prepared_assets,
     )
     return UiCommander(runtime_processing)
