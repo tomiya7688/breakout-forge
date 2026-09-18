@@ -31,7 +31,7 @@ Values that a stage author or user is likely to tune belong outside the program.
 - Missing stage keys inherit common values.
 - Keep normal gameplay tuning out of Python constants.
 
-At minimum externalize ball speed, paddle speed/size, board dimensions, image split dimensions, playfield fit, layer HP, and asset paths. New tunable values should default to external data unless there is a strong reason not to.
+At minimum externalize ball speed, paddle speed/size, stage_size, break_image.split, image load mode/background tolerance, playfield fit, layer HP, and asset paths. stage_size is the whole logical stage size; break_image.split is the destructible source-image split and must not be conflated with stage_size or display resolution. New tunable values should default to external data unless there is a strong reason not to.
 
 ## Task Routing
 - App window/input/rendering: `src/breakout_forge/ui/`
@@ -60,6 +60,6 @@ At minimum externalize ball speed, paddle speed/size, board dimensions, image sp
 7. Ignore generated artifacts, logs and history unless required by the task.
 
 ## Current State
-A playable standard Breakout path exists through UI -> Process. Data supports common/stage recursive settings resolution and stage metadata/layer loading through DataCommander/DataMessenger. Image-stage generation/rendering and MOD loading remain later work.
+A playable standard Breakout path and a single-image destructible stage path exist. Data decodes PNG/JPEG/WebP, optionally removes corner-connected background, and prepares RGBA assets. Process builds the image destruction Board from break_image.split, while UI renders source-rect tiles from the prepared source asset. Multi-layer image stages and MOD loading remain later work.
 
 The repository is intentionally small; do not introduce heavy indexes, generated call graphs, or duplicated AI documentation until repeated lookup cost justifies them.
