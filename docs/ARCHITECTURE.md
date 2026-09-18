@@ -45,7 +45,7 @@ Processing modules perform actual work and remain scoped to their layer. Large p
 ## Current Implementation
 The repository now includes the pygame runtime, Process-owned state machine, Paddle/Ball simulation, Board/Cell/BlockLayer models, layer damage, Ball/Board collision, and a playable standard stage.
 
-Stage/config file access belongs to Data Processing. Resolved stage definitions cross the Data boundary through contracts; Process code must not parse JSON or resolve filesystem-relative asset paths. Image-stage rendering and MOD support are added by later Issues without changing these layer rules.
+Stage/config file access and source-image decoding/preprocessing belong to Data Processing. Prepared image bytes and resolved stage definitions cross boundaries through framework-neutral contracts. Process creates image-tile Boards and source-rect snapshots without pygame. UI converts prepared RGBA assets to pygame Surfaces and renders them. Multi-layer image stages and MOD support are added by later Issues without changing these layer rules.
 
 ## AI Navigation
 Use `AI_CONTEXT.md` as the compact entry point. `DESIGN.md` remains the product/feature source of truth; this document is the architecture source of truth for UPD layer placement.
