@@ -60,4 +60,6 @@ At minimum externalize ball speed, paddle speed/size, board dimensions, image sp
 7. Ignore generated artifacts, logs and history unless required by the task.
 
 ## Current State
-Foundation work is in progress. The repository is intentionally small; do not introduce heavy indexes, generated call graphs, or duplicated AI documentation until repeated lookup cost justifies them.
+A playable standard Breakout path exists through UI -> Process. Data supports common/stage recursive settings resolution and stage metadata/layer loading through DataCommander/DataMessenger. Image-stage generation/rendering and MOD loading remain later work.
+
+The repository is intentionally small; do not introduce heavy indexes, generated call graphs, or duplicated AI documentation until repeated lookup cost justifies them.

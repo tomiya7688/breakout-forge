@@ -42,8 +42,10 @@ Processing modules perform actual work and remain scoped to their layer. Large p
 ## Composition Root
 `breakout_forge.app.create_application()` is the composition root. It wires concrete components together and does not perform runtime game work.
 
-## Current Foundation
-The first implementation intentionally contains only a UI runtime loop and a process-frame placeholder. Ball, paddle, board, stage loading and modding are added by later Issues without changing the layer rules above.
+## Current Implementation
+The repository now includes the pygame runtime, Process-owned state machine, Paddle/Ball simulation, Board/Cell/BlockLayer models, layer damage, Ball/Board collision, and a playable standard stage.
+
+Stage/config file access belongs to Data Processing. Resolved stage definitions cross the Data boundary through contracts; Process code must not parse JSON or resolve filesystem-relative asset paths. Image-stage rendering and MOD support are added by later Issues without changing these layer rules.
 
 ## AI Navigation
 Use `AI_CONTEXT.md` as the compact entry point. `DESIGN.md` remains the product/feature source of truth; this document is the architecture source of truth for UPD layer placement.
