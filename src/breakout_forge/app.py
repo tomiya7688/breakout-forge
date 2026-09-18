@@ -47,20 +47,14 @@ def create_application(
                 settings.playfield,
             )
         else:
-            if len(image_layers) != 1:
-                raise ValueError(
-                    "multiple image layers require the layered-image implementation"
-                )
-            image_layer = image_layers[0]
-            prepared = data_messenger.prepare_image(
-                image_layer,
-                settings.break_image,
+            prepared_assets = tuple(
+                data_messenger.prepare_image(layer, settings.break_image)
+                for layer in image_layers
             )
-            prepared_assets = (prepared,)
             stage_processing = ImageStageProcessing(
                 stage,
-                image_layer,
-                prepared,
+                image_layers,
+                prepared_assets,
                 settings.playfield,
                 settings.standard_stage,
             )

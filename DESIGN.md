@@ -211,7 +211,11 @@ Fit モードは `contain`, `cover`, `stretch`。標準は `contain`。
 
 ## 9. 多層画像ステージ
 
-複数画像を同一グリッドへ割り当て、上から順番に破壊できる。上層の一部が壊れると、その場所だけ下層画像が露出する。
+複数の崩す対象画像を同一の `break_image.split` グリッドへ割り当て、`stage.json` の `layers` を下→上の順で各Cellへ積む。描画と衝突は最上位の有効Layerを使用し、上層の一部が壊れると、そのCellだけ下層画像が即時露出する。
+
+Layerごとに `hp`, `collidable`, `destructible`, `visible` を持てる。背景除去によってあるLayerのタイルが空になった場合、そのCellでは最初から下位Layerが見える。
+
+複数画像はピクセル解像度が異なってもよいが、同じタイル座標を同じ表示位置へ重ねるため縦横比は一致必須とする。各Layerの `source_rect` はそれぞれの元画像寸法から計算し、destination Cellは共有する。
 
 ---
 
