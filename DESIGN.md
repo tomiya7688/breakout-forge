@@ -132,6 +132,8 @@ breakout-forge/
 
 `userdata/` は実行時生成を基本とし、Git 管理対象外にする。
 
+外部データの基準ディレクトリは、ソース実行時はパッケージ位置からリポジトリルートを解決し、PyInstaller `--onedir` 実行時は実行ファイルのあるディレクトリを使用する。プロセスの current working directory には依存しない。
+
 ---
 
 ## 6. ゲームモデル
@@ -369,7 +371,11 @@ Python MODはサンドボックスではなく通常のPythonコードとして�
 
 ## 13. 配布
 
-Windows は PyInstaller `--onedir` を使用する。`config/`, `assets/`, `stages/`, `mods/` は原則として exe 外部へ配置し、ユーザーが差し替え・追加できるようにする。
+Windows は PyInstaller `--onedir` を使用する。`config/`, `assets/`, `stages/`, `mods/`, `userdata/` は実行ファイルと同じ外部ベースディレクトリ配下に配置する。
+
+ソース実行でも同じ相対構成を使用する。起動時のcurrent working directoryには依存せず、ソース時はリポジトリルート、frozen時はexeの親ディレクトリを基準とする。
+
+`userdata/` は存在しなければ自動作成する。`userdata/settings.json` は任意で、設定解決順は `common → user → stage` とする。
 
 ---
 
