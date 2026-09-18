@@ -36,3 +36,6 @@ class DataMessenger:
 
     def resolve_paths(self, base_dir: Path | None = None) -> ExternalPaths:
         return self._commander.resolve_paths(base_dir)
+
+    def require_file(self, path: Path, description: str) -> Path:
+        return self._commander.require_file(path, description)
