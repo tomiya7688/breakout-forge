@@ -274,3 +274,49 @@ def test_different_aspect_ratio_is_rejected() -> None:
             settings.playfield,
             settings.standard_stage,
         )
+
+
+def test_reset_restores_all_layers_and_hp() -> None:
+    settings = _settings()
+    bottom = _layer("bottom")
+    top = _layer("top", hp=2)
+    stage = ResolvedStageDefinition(
+        id="layered",
+        name="Layered",
+        directory=Path("."),
+        settings=settings,
+        layers=(bottom, top),
+    )
+    runtime = ImageStageProcessing(
+        stage,
+        (bottom, top),
+        (
+            PreparedImageAsset(
+                id="bottom",
+                width=8,
+                height=4,
+                rgba=bytes(8 * 4 * 4),
+                active_tiles=frozenset({(0, 0), (1, 0)}),
+            ),
+            PreparedImageAsset(
+                id="top",
+                width=16,
+                height=8,
+                rgba=bytes(16 * 8 * 4),
+                active_tiles=frozenset({(0, 0), (1, 0)}),
+            ),
+        ),
+        settings.playfield,
+        settings.standard_stage,
+    )
+    damage = LayerDamageProcessing()
+    cell = runtime.board.cell_at(0, 0)
+    damage.apply(cell)
+    damage.apply(cell)
+    assert cell.top_visible_layer().asset_id == "bottom"
+
+    runtime.reset()
+    restored = runtime.board.cell_at(0, 0)
+    assert [layer.asset_id for layer in restored.layers] == ["bottom", "top"]
+    assert restored.top_visible_layer().asset_id == "top"
+    assert restored.top_visible_layer().hp == 2
