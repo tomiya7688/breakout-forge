@@ -34,19 +34,24 @@ def create_application(
     data_messenger = DataMessenger(DataCommander())
     paths = data_messenger.resolve_paths(base_dir)
 
-    common = common_path or paths.common_settings
-    user_settings = user_settings_path or paths.user_settings
-    mods = mods_dir or paths.mods_dir
+    common = paths.resolve(common_path) if common_path is not None else paths.common_settings
+    user_settings = (
+        paths.resolve(user_settings_path)
+        if user_settings_path is not None
+        else paths.user_settings
+    )
+    mods = paths.resolve(mods_dir) if mods_dir is not None else paths.mods_dir
+    stage_file = paths.resolve(stage_path) if stage_path is not None else None
 
     data_messenger.require_file(common, "common settings")
-    if stage_path is not None:
-        data_messenger.require_file(stage_path, "stage definition")
+    if stage_file is not None:
+        data_messenger.require_file(stage_file, "stage definition")
 
     mod_api = ModApi()
     data_messenger.load_mods(mods, mod_api)
     prepared_assets: tuple[PreparedImageAsset, ...] = ()
 
-    if stage_path is None:
+    if stage_file is None:
         settings = resolve_runtime_settings(
             common,
             user_path=user_settings,
@@ -61,7 +66,7 @@ def create_application(
     else:
         stage = data_messenger.load_stage(
             common,
-            stage_path,
+            stage_file,
             user_settings,
         )
         settings = stage.settings
