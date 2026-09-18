@@ -5,6 +5,8 @@ This module only wires layer components together. It does not contain UI, game, 
 
 from pathlib import Path
 
+from breakout_forge.data.commander import DataCommander
+from breakout_forge.data.messenger import DataMessenger
 from breakout_forge.data.processing.settings_processing import resolve_common_settings
 from breakout_forge.process.commander import ProcessCommander
 from breakout_forge.process.messenger import ProcessMessenger
@@ -16,8 +18,17 @@ from breakout_forge.ui.messenger import UiMessenger
 from breakout_forge.ui.processing.runtime_processing import RuntimeProcessing
 
 
-def create_application(common_path: Path | None = None) -> UiCommander:
-    settings = resolve_common_settings(common_path or Path("config/common.json"))
+def create_application(
+    common_path: Path | None = None,
+    stage_path: Path | None = None,
+) -> UiCommander:
+    common = common_path or Path("config/common.json")
+
+    if stage_path is None:
+        settings = resolve_common_settings(common)
+    else:
+        data_messenger = DataMessenger(DataCommander())
+        settings = data_messenger.load_stage(common, stage_path).settings
 
     stage_processing = StandardStageProcessing(
         settings.stage_size,
@@ -36,5 +47,9 @@ def create_application(common_path: Path | None = None) -> UiCommander:
     process_commander = ProcessCommander(frame_processing)
     process_messenger = ProcessMessenger(process_commander)
     ui_messenger = UiMessenger(process_messenger)
-    runtime_processing = RuntimeProcessing(ui_messenger, settings.display, settings.appearance)
+    runtime_processing = RuntimeProcessing(
+        ui_messenger,
+        settings.display,
+        settings.appearance,
+    )
     return UiCommander(runtime_processing)
