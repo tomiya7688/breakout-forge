@@ -347,7 +347,11 @@ paddle_size.height = 18
 
 ## 12. MOD システム
 
-`mods/<mod>/mod.json` と Python entry を使用する。MOD から pygame の private 実装へ直接依存させず、公開イベント API を経由する。
+`mods/<mod>/mod.json` と Python entry を使用する。entry は `setup(api)` を公開し、`api.subscribe(event_name, handler)` で公開イベントを購読する。MOD へはpygameのSurface/Rectやprivateゲームオブジェクトを渡さず、座標、Layer ID、score、delta等のframework-neutralなイベントデータだけを渡す。
+
+1つのMODのimport/setup失敗やhandler例外はログへ記録し、他MODとゲーム本体を可能な限り継続する。
+
+Python MODはサンドボックスではなく通常のPythonコードとして実行される。ファイルアクセスやネットワークアクセス等もPythonプロセスと同じ権限を持ち得るため、信頼できるMODのみ導入する。
 
 初期イベント候補:
 
