@@ -12,6 +12,14 @@ class RectSnapshot:
 
 
 @dataclass(frozen=True, slots=True)
+class SourceRectSnapshot:
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+@dataclass(frozen=True, slots=True)
 class BallSnapshot:
     x: float
     y: float
@@ -23,6 +31,8 @@ class BlockSnapshot:
     column: int
     row: int
     rect: RectSnapshot
+    asset_id: str | None = None
+    source_rect: SourceRectSnapshot | None = None
 
 
 @dataclass(frozen=True, slots=True)
