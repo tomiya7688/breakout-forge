@@ -195,11 +195,17 @@ Breakout Forge の中心機能の一つ。衝突時は最上位有効 Layer に 
 
 ## 8. 画像ステージ
 
-画像1枚を指定分割数へ論理分割し、それぞれを Cell / BlockLayer の表示領域として扱う。画像ファイルそのものは分割保存しない。
+崩す対象画像1枚を `break_image.split` で論理分割し、それぞれを破壊タイルとして扱う。元画像ファイルそのものは小画像へ分割保存しない。各タイルは元画像の `source_rect` を参照し、UI は元画像を1回だけ保持して必要部分を描画する。
 
-画像分割数は Board のマス数とは独立設定とする。通常は同じ値を使えるが、将来の複数セル割当や表示表現拡張を妨げない。
+`stage_size` はステージ全体が論理的に何マスあるかを示す値で、崩す対象画像の分割数ではない。`break_image.split` は崩す対象画像を何分割するかを示し、この2つは独立する。表示解像度 `display.width / height` とも別概念である。
 
-Fit モード初期候補は `contain`, `cover`, `stretch`。標準は `contain`。
+画像読み込みモードは次を持つ。
+
+- `keep_background`: 背景を含めて画像全体を破壊対象として扱う
+- `remove_background`: 四隅から連結する背景色を透過化し、前景が存在しないタイルは破壊対象にしない
+- 背景色判定の許容差は `break_image.background_tolerance` で外部設定する
+
+Fit モードは `contain`, `cover`, `stretch`。標準は `contain`。
 
 ---
 
@@ -213,7 +219,7 @@ Fit モード初期候補は `contain`, `cover`, `stretch`。標準は `contain`
 
 ### 10.1 common.json
 
-全ステージの既定値を保持する。
+全ステージの既定値を保持する。主要項目の例:
 
 ```json
 {
@@ -226,13 +232,17 @@ Fit モード初期候補は `contain`, `cover`, `stretch`。標準は `contain`
       "height": 18
     }
   },
-  "board": {
+  "stage_size": {
     "columns": 20,
     "rows": 15
   },
-  "image_split": {
-    "columns": 20,
-    "rows": 15
+  "break_image": {
+    "split": {
+      "columns": 20,
+      "rows": 15
+    },
+    "load_mode": "keep_background",
+    "background_tolerance": 16
   },
   "playfield": {
     "fit": "contain"
@@ -240,13 +250,10 @@ Fit モード初期候補は `contain`, `cover`, `stretch`。標準は `contain`
 }
 ```
 
-単位は初期実装では次を標準とする。
-
-- `ball_speed`: pixel / second
-- `paddle_speed`: pixel / second
-- `paddle_size.width`, `height`: pixel
-- `board.columns`, `rows`: Cell 数
-- `image_split.columns`, `rows`: 元画像の論理分割数
+- `stage_size.columns / rows`: ステージ全体の論理マス数
+- `break_image.split.columns / rows`: 崩す対象画像の論理分割数
+- `display.width / height`: 表示解像度
+- 上記3種は独立した概念として扱う
 
 ### 10.2 stage.json
 
@@ -261,13 +268,16 @@ Fit モード初期候補は `contain`, `cover`, `stretch`。標準は `contain`
     "gameplay": {
       "ball_speed": 420.0
     },
-    "board": {
+    "stage_size": {
       "columns": 24,
       "rows": 18
     },
-    "image_split": {
-      "columns": 24,
-      "rows": 18
+    "break_image": {
+      "split": {
+        "columns": 32,
+        "rows": 20
+      },
+      "load_mode": "remove_background"
     }
   },
   "layers": [
@@ -280,7 +290,7 @@ Fit モード初期候補は `contain`, `cover`, `stretch`。標準は `contain`
 }
 ```
 
-この例では `ball_speed`, `board`, `image_split` のみ stage 値を使い、`paddle_speed`, `paddle_size`, `playfield.fit` は common 値を継承する。
+この例ではステージ全体は24×18論理マス、崩す対象画像は32×20分割であり、両者は同じ値である必要はない。
 
 ### 10.3 設定マージ規則
 
@@ -310,8 +320,8 @@ paddle_size.height = 18
 - ボール速度
 - パドル速度
 - パドル幅 / 高さ
-- Board の列数 / 行数
-- 画像分割の列数 / 行数
+- ステージ全体の論理マス数
+- 崩す対象画像の分割列数 / 行数
 - playfield fit
 - Layer HP
 - 画像パス
@@ -360,7 +370,7 @@ Windows は PyInstaller `--onedir` を使用する。`config/`, `assets/`, `stag
 - common + stage の再帰マージ
 - 未指定値の common 継承
 - 不正型 / 範囲外値の検証
-- Board / image split の生成
+- stage_size / break_image.split を独立させた生成
 - Layer 多層破壊
 - MOD 読込失敗境界
 - source 実行と onedir 実行の外部パス解決
