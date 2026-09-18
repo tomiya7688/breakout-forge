@@ -9,6 +9,7 @@ from breakout_forge.contracts.image_asset import PreparedImageAsset
 from breakout_forge.data.commander import DataCommander
 from breakout_forge.data.messenger import DataMessenger
 from breakout_forge.data.processing.settings_processing import resolve_common_settings
+from breakout_forge.modding.api import ModApi
 from breakout_forge.process.commander import ProcessCommander
 from breakout_forge.process.messenger import ProcessMessenger
 from breakout_forge.process.processing.frame_processing import FrameProcessing
@@ -23,21 +24,28 @@ from breakout_forge.ui.processing.runtime_processing import RuntimeProcessing
 def create_application(
     common_path: Path | None = None,
     stage_path: Path | None = None,
+    mods_dir: Path | None = None,
 ) -> UiCommander:
     common = common_path or Path("config/common.json")
+    data_messenger = DataMessenger(DataCommander())
+    mod_api = ModApi()
+    data_messenger.load_mods(mods_dir or Path("mods"), mod_api)
     prepared_assets: tuple[PreparedImageAsset, ...] = ()
 
     if stage_path is None:
         settings = resolve_common_settings(common)
+        stage_id = "standard"
+        stage_name = "Standard Stage"
         stage_processing = StandardStageProcessing(
             settings.stage_size,
             settings.standard_stage,
             settings.playfield,
         )
     else:
-        data_messenger = DataMessenger(DataCommander())
         stage = data_messenger.load_stage(common, stage_path)
         settings = stage.settings
+        stage_id = stage.id
+        stage_name = stage.name
         image_layers = tuple(layer for layer in stage.layers if layer.image_path is not None)
 
         if not image_layers:
@@ -67,7 +75,9 @@ def create_application(
     frame_processing = FrameProcessing(
         paddle_ball_processing=paddle_ball_processing,
         stage_processing=stage_processing,
+        mod_api=mod_api,
     )
+    frame_processing.emit_stage_loaded(stage_id, stage_name)
     process_commander = ProcessCommander(frame_processing)
     process_messenger = ProcessMessenger(process_commander)
     ui_messenger = UiMessenger(process_messenger)
