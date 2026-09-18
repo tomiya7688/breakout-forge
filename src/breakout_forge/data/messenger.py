@@ -19,8 +19,9 @@ class DataMessenger:
         self,
         common_path: Path,
         stage_path: Path,
+        user_path: Path | None = None,
     ) -> ResolvedStageDefinition:
-        return self._commander.load_stage(common_path, stage_path)
+        return self._commander.load_stage(common_path, stage_path, user_path)
 
     def prepare_image(
         self,
