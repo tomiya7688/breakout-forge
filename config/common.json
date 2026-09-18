@@ -40,7 +40,8 @@
       "columns": 20,
       "rows": 15
     },
-    "load_mode": "keep_background"
+    "load_mode": "keep_background",
+    "background_tolerance": 16
   },
   "playfield": {
     "width": 800,

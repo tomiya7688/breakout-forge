@@ -5,7 +5,7 @@ from dataclasses import replace
 from breakout_forge.contracts.frame import FrameRequest, FrameResult
 from breakout_forge.contracts.game_state import GameState
 from breakout_forge.process.processing.paddle_ball_processing import PaddleBallProcessing
-from breakout_forge.process.processing.standard_stage_processing import StandardStageProcessing
+from breakout_forge.process.processing.stage_runtime import StageRuntime
 from breakout_forge.process.processing.state_processing import StateProcessing
 
 
@@ -16,7 +16,7 @@ class FrameProcessing:
         self,
         state_processing: StateProcessing | None = None,
         paddle_ball_processing: PaddleBallProcessing | None = None,
-        stage_processing: StandardStageProcessing | None = None,
+        stage_processing: StageRuntime | None = None,
     ) -> None:
         self._state_processing = state_processing or StateProcessing()
         self._paddle_ball_processing = paddle_ball_processing

@@ -69,6 +69,7 @@ class AppearanceSettings:
 class BreakImageSettings:
     split: GridSettings
     load_mode: str
+    background_tolerance: int
 
 
 @dataclass(frozen=True, slots=True)
