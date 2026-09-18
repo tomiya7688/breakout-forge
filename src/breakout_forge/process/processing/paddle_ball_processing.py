@@ -48,6 +48,7 @@ class PaddleBallProcessing:
             board_collision_processing or BoardCollisionProcessing()
         )
         self._last_board_collisions: tuple[BoardCollisionResult, ...] = ()
+        self._last_paddle_hits = 0
         self._paddle: _Paddle
         self._balls: list[_Ball]
         self.reset()
@@ -55,6 +56,10 @@ class PaddleBallProcessing:
     @property
     def last_board_collisions(self) -> tuple[BoardCollisionResult, ...]:
         return self._last_board_collisions
+
+    @property
+    def last_paddle_hits(self) -> int:
+        return self._last_paddle_hits
 
     def set_board(self, board: Board | None) -> None:
         """Replace the active board without coupling board creation to this processor."""
@@ -88,6 +93,7 @@ class PaddleBallProcessing:
             )
         ]
         self._last_board_collisions = ()
+        self._last_paddle_hits = 0
 
     def update(self, delta_seconds: float, move_axis: float) -> bool:
         """Advance gameplay and return True when all balls have fallen out."""
@@ -100,6 +106,7 @@ class PaddleBallProcessing:
 
         survivors: list[_Ball] = []
         collisions: list[BoardCollisionResult] = []
+        paddle_hits = 0
         for ball in self._balls:
             previous_x = ball.x
             previous_y = ball.y
@@ -130,12 +137,14 @@ class PaddleBallProcessing:
             if self._intersects_paddle(ball) and ball.vy > 0:
                 ball.y = self._paddle.y - ball.size
                 ball.vy = -abs(ball.vy)
+                paddle_hits += 1
 
             if ball.y <= self._playfield.height:
                 survivors.append(ball)
 
         self._balls = survivors
         self._last_board_collisions = tuple(collisions)
+        self._last_paddle_hits = paddle_hits
         return not self._balls
 
     def _intersects_paddle(self, ball: _Ball) -> bool:
