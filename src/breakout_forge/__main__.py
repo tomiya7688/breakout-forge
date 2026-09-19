@@ -35,7 +35,7 @@ def _smoke_test() -> int:
 
 def _stage_argument(value: str) -> Path:
     candidate = Path(value)
-    if candidate.suffix.lower() == ".json" or "/" in value or "\" in value:
+    if candidate.suffix.lower() == ".json" or "/" in value or "\\" in value:
         return candidate
     return Path("stages") / value / "stage.json"
 
