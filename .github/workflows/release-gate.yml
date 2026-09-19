@@ -56,6 +56,16 @@ jobs:
       - name: Run complete regression suite
         run: pytest
 
+      - name: Run dedicated release E2E suite
+        run: pytest tests/test_release_e2e.py tests/test_release_ui.py tests/test_release_blockers.py -q
+
+      - name: Reject unresolved release blockers
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          python scripts/check_release_blockers.py \
+            --ledger release/known-issues.json \
+            --expected-version "${VERSION}"
+
       - name: Validate every repository data asset
         run: python scripts/validate_data.py --project-root .
 
@@ -127,6 +137,12 @@ jobs:
 
       - name: Run complete regression suite on release OS
         run: pytest
+
+      - name: Run dedicated release E2E suite on Windows
+        run: pytest tests/test_release_e2e.py tests/test_release_ui.py tests/test_release_blockers.py -q
+
+      - name: Reject unresolved release blockers on Windows
+        run: python scripts/check_release_blockers.py --ledger release/known-issues.json --expected-version "$env:RELEASE_VERSION"
 
       - name: Validate release data on Windows
         run: python scripts/validate_data.py --project-root .
