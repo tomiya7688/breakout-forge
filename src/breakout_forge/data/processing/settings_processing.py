@@ -125,6 +125,12 @@ def _convert_resolved_settings(merged: dict[str, Any]) -> ResolvedStageSettings:
 
     direction_x = _number(ball_direction.get("x"), "gameplay.ball_initial_direction.x")
     direction_y = _number(ball_direction.get("y"), "gameplay.ball_initial_direction.y")
+    overlay_center_y_ratio = _number(
+        appearance.get("overlay_center_y_ratio", 0.68),
+        "appearance.overlay_center_y_ratio",
+    )
+    if not 0.0 <= overlay_center_y_ratio <= 1.0:
+        raise SettingsError("appearance.overlay_center_y_ratio must be between 0 and 1")
     if direction_x == 0 and direction_y == 0:
         raise SettingsError("gameplay.ball_initial_direction must not be zero")
 
@@ -181,6 +187,7 @@ def _convert_resolved_settings(merged: dict[str, Any]) -> ResolvedStageSettings:
             score_font_size=_positive_int(
                 appearance.get("score_font_size"), "appearance.score_font_size"
             ),
+            overlay_center_y_ratio=overlay_center_y_ratio,
         ),
         break_image=BreakImageSettings(
             split=GridSettings(
