@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import subprocess
 import tempfile
@@ -52,13 +53,6 @@ def verify_release_distribution(dist_root: Path, expected_version: str) -> None:
     if missing:
         raise ReleaseAcceptanceError("missing release paths: " + ", ".join(missing))
 
-    version = _run(exe, "--version")
-    expected_line = f"BreakoutForge {expected_version}"
-    if version.stdout.strip() != expected_line:
-        raise ReleaseAcceptanceError(
-            f"version output mismatch: expected {expected_line!r}, got {version.stdout.strip()!r}"
-        )
-
     _run(exe, "--smoke-test")
 
     for stage_id in ("standard_sample", "sample", "layered_sample"):
@@ -67,11 +61,35 @@ def verify_release_distribution(dist_root: Path, expected_version: str) -> None:
     # Explicit-path input must behave the same as stage-id input.
     _run(exe, "--validate-stage", r"stages\sample\stage.json")
 
-    # The packaged executable must not depend on the caller's current directory.
-    with tempfile.TemporaryDirectory() as temp_cwd:
-        foreign_cwd = Path(temp_cwd)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp = Path(temp_dir)
+        probe_file = temp / "release-probe.json"
+        _run(exe, "--release-probe", str(probe_file))
+        probe = json.loads(probe_file.read_text(encoding="utf-8"))
+
+        expected_probe = {
+            "version": expected_version,
+            "base_dir": str(root),
+            "smoke_test": "ok",
+            "validated_stages": ["standard_sample", "sample", "layered_sample"],
+        }
+        if probe != expected_probe:
+            raise ReleaseAcceptanceError(
+                f"release probe mismatch:\nexpected={expected_probe!r}\nactual={probe!r}"
+            )
+
+        # The packaged executable must not depend on the caller's current directory.
+        foreign_cwd = temp / "foreign-cwd"
+        foreign_cwd.mkdir()
+        foreign_probe = temp / "foreign-release-probe.json"
         _run(exe, "--smoke-test", cwd=foreign_cwd)
         _run(exe, "--validate-stage", "sample", cwd=foreign_cwd)
+        _run(exe, "--release-probe", str(foreign_probe), cwd=foreign_cwd)
+        foreign = json.loads(foreign_probe.read_text(encoding="utf-8"))
+        if foreign != expected_probe:
+            raise ReleaseAcceptanceError(
+                "release probe changed when launched from a foreign working directory"
+            )
 
 
 def main() -> int:
