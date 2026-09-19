@@ -165,7 +165,12 @@ class RenderProcessing:
             }.get(result.state)
             if label:
                 text = font.render(label, True, self._appearance.text_rgb)
-                rect = text.get_rect(center=screen.get_rect().center)
+                rect = text.get_rect(
+                    center=(
+                        screen.get_rect().centerx,
+                        round(screen.get_height() * self._appearance.overlay_center_y_ratio),
+                    )
+                )
                 screen.blit(text, rect)
 
         pygame.display.flip()
