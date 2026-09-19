@@ -44,6 +44,9 @@ jobs:
       - name: Verify tag matches package version
         run: python scripts/check_release_version.py --tag "$RELEASE_TAG"
 
+      - name: Verify dependency consistency
+        run: python -m pip check
+
       - name: Compile all Python
         run: python -m compileall -q src scripts tests
 
@@ -112,6 +115,9 @@ jobs:
           $version = (python scripts/check_release_version.py --tag "$env:RELEASE_TAG").Trim()
           "RELEASE_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Verify dependency consistency on release OS
+        run: python -m pip check
+
       - name: Run complete regression suite on release OS
         run: pytest
 
@@ -160,8 +166,8 @@ jobs:
         with:
           name: breakout-forge-${{ env.RELEASE_TAG }}-release-candidate
           path: |
-            dist/BreakoutForge-v${{ env.RELEASE_VERSION }}-windows-x64.zip
-            dist/BreakoutForge-v${{ env.RELEASE_VERSION }}-windows-x64.zip.sha256
+            dist/BreakoutForge-v*-windows-x64.zip
+            dist/BreakoutForge-v*-windows-x64.zip.sha256
           if-no-files-found: error
           retention-days: 30
 
