@@ -13,8 +13,8 @@
       "id": "BUG-SCRIPTS-IMPORT-001",
       "severity": "release_blocker",
       "status": "fixed",
-      "summary": "CI pytest collection could not import reusable scripts.* helpers because scripts was not a package.",
-      "regression_test": "Full pytest collection imports distribution, data, license, version and release helpers."
+      "summary": "CI pytest collection could not import reusable scripts.* helpers because pytest only added src/ to its import path.",
+      "regression_test": "pyproject pytest pythonpath includes both src and repository root; full pytest collection imports repository automation helpers."
     }
   ]
 }
