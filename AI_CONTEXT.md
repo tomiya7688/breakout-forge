@@ -67,4 +67,6 @@ External paths are cwd-independent: source execution resolves the repository roo
 
 Windows packaging uses build.bat + PyInstaller --onedir. Runtime dependencies belong under dist/BreakoutForge/_internal while config/assets/stages/mods/userdata stay editable beside BreakoutForge.exe. The packaged executable supports --smoke-test for headless layout validation.
 
+CI is split into Python tests, external-data validation, and a dependent Windows onedir build. Data validation checks stage assets and actually imports/registers repository MODs; the Windows job uploads dist/BreakoutForge as an artifact after build.bat smoke testing.
+
 The repository is intentionally small; do not introduce heavy indexes, generated call graphs, or duplicated AI documentation until repeated lookup cost justifies them.
