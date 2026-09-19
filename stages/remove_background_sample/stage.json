@@ -5,8 +5,8 @@
   "settings": {
     "break_image": {
       "split": {
-        "columns": 20,
-        "rows": 12
+        "columns": 24,
+        "rows": 18
       },
       "load_mode": "remove_background",
       "background_tolerance": 16
