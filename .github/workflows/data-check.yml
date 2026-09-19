@@ -31,3 +31,6 @@ jobs:
 
       - name: Validate repository external data
         run: python scripts/validate_data.py --project-root .
+
+      - name: Audit licenses and bundled media provenance
+        run: python scripts/audit_licenses.py --project-root .

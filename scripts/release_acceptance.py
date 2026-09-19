@@ -48,6 +48,8 @@ def verify_release_distribution(dist_root: Path, expected_version: str) -> None:
         root / "userdata",
         root / "README.md",
         root / "LICENSE",
+        root / "THIRD_PARTY_NOTICES.md",
+        root / "third_party_licenses",
     )
     missing = [str(path) for path in required if not path.exists()]
     if missing:

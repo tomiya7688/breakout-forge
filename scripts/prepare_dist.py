@@ -7,8 +7,8 @@ from pathlib import Path
 import shutil
 
 
-EXTERNAL_DIRS = ("config", "assets", "stages", "mods")
-TOP_LEVEL_FILES = ("README.md", "LICENSE")
+EXTERNAL_DIRS = ("config", "assets", "stages", "mods", "third_party_licenses")
+TOP_LEVEL_FILES = ("README.md", "LICENSE", "THIRD_PARTY_NOTICES.md")
 
 
 def prepare_distribution(project_root: Path, dist_root: Path) -> None:

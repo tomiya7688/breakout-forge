@@ -7,21 +7,23 @@ def test_prepare_distribution_copies_external_dirs_and_creates_userdata(tmp_path
     project = tmp_path / "project"
     dist = tmp_path / "dist" / "BreakoutForge"
 
-    for name in ("config", "assets", "stages", "mods"):
+    for name in ("config", "assets", "stages", "mods", "third_party_licenses"):
         directory = project / name
         directory.mkdir(parents=True, exist_ok=True)
         (directory / "marker.txt").write_text(name, encoding="utf-8")
     (project / "README.md").write_text("readme", encoding="utf-8")
     (project / "LICENSE").write_text("license", encoding="utf-8")
+    (project / "THIRD_PARTY_NOTICES.md").write_text("notices", encoding="utf-8")
 
     prepare_distribution(project, dist)
 
-    for name in ("config", "assets", "stages", "mods"):
+    for name in ("config", "assets", "stages", "mods", "third_party_licenses"):
         assert (dist / name / "marker.txt").read_text(encoding="utf-8") == name
 
     assert (dist / "userdata").is_dir()
     assert (dist / "README.md").read_text(encoding="utf-8") == "readme"
     assert (dist / "LICENSE").read_text(encoding="utf-8") == "license"
+    assert (dist / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8") == "notices"
 
 
 def test_prepare_distribution_replaces_stale_external_copy(tmp_path: Path) -> None:

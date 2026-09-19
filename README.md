@@ -540,7 +540,9 @@ Windows Artifact名は `breakout-forge-windows-onedir` です。
 
 Breakout Forge本体は [MIT License](LICENSE) です。
 
-公式repositoryへ含めるサンプル素材・依存ライブラリの最終監査はv1.0.0リリース前チェックで行います。
+配布物に含まれるPython / pygame / Pillow / PyInstallerおよびpygame native dependencyの表記は [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) と `third_party_licenses/` に同梱します。
+
+公式サンプル素材の出所とv1.0.0監査結果は [docs/LICENSE_AUDIT.md](docs/LICENSE_AUDIT.md) を参照してください。ユーザーが独自に追加する画像・ステージ・MODの権利状態や安全性は、その提供者・利用者側で確認してください。
 
 
 ## 正式リリース

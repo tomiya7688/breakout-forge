@@ -1,0 +1,23 @@
+{
+  "format_version": 1,
+  "assets": [
+    {
+      "path": "stages/sample/main.png",
+      "origin": "Created specifically for the Breakout Forge repository as a generated sample graphic.",
+      "copyright": "Breakout Forge contributors",
+      "license": "MIT"
+    },
+    {
+      "path": "stages/layered_sample/bottom.png",
+      "origin": "Created specifically for the Breakout Forge repository as a generated sample graphic.",
+      "copyright": "Breakout Forge contributors",
+      "license": "MIT"
+    },
+    {
+      "path": "stages/layered_sample/top.png",
+      "origin": "Created specifically for the Breakout Forge repository as a generated sample graphic.",
+      "copyright": "Breakout Forge contributors",
+      "license": "MIT"
+    }
+  ]
+}
