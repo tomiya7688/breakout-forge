@@ -10,6 +10,7 @@ from breakout_forge import __version__
 from breakout_forge.app import create_application
 from breakout_forge.data.commander import DataCommander
 from breakout_forge.data.messenger import DataMessenger
+from breakout_forge.modding.api import ModApi
 from breakout_forge.data.processing.path_processing import (
     require_file,
     resolve_external_paths,
@@ -64,15 +65,25 @@ def _release_probe(output_path: Path) -> int:
 
     paths = resolve_external_paths()
     _smoke_test()
-    stages = ("standard_sample", "sample", "layered_sample")
+    stages = (
+        "standard_sample",
+        "sample",
+        "remove_background_sample",
+        "layered_sample",
+    )
     for stage_id in stages:
         _validate_stage(_stage_argument(stage_id))
+
+    data = DataMessenger(DataCommander())
+    loaded_mods = data.load_mods(paths.mods_dir, ModApi())
 
     payload = {
         "version": __version__,
         "base_dir": str(paths.base_dir),
         "smoke_test": "ok",
         "validated_stages": list(stages),
+        "loaded_mods": [mod.id for mod in loaded_mods],
+        "userdata_exists": paths.userdata_dir.is_dir(),
     }
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
