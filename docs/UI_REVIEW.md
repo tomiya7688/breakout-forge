@@ -13,13 +13,14 @@ python scripts/capture_release_ui.py --project-root . --output release-ui
 生成対象:
 
 1. READY / 開始画面
-2. 標準ステージプレイ中
-3. 単一画像ステージ
-4. remove_background画像ステージ
-5. 多層画像ステージ（上層あり）
-6. 多層画像ステージ（上層一部破壊・下層露出）
-7. CLEAR
-8. GAME OVER
+2. 標準ステージ開始直後
+3. 標準ステージプレイ中
+4. 単一画像ステージ
+5. remove_background画像ステージ
+6. 多層画像ステージ（上層あり）
+7. 多層画像ステージ（上層一部破壊・下層露出）
+8. CLEAR
+9. GAME OVER
 
 `manifest.json` とPNG一式を `release-ui-review-pack` Artifactとして保存する。
 
