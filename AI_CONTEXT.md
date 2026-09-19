@@ -73,4 +73,6 @@ User-facing stage selection is available through `--stage <id|path>`, where a si
 
 Formal releases must use the separate Release Gate, not ordinary CI alone. It reruns full regression on Linux and Windows, builds the actual onedir artifact, checks machine-readable packaged I/O, re-extracts and retests the ZIP, verifies SHA-256, and only then publishes a tag-triggered GitHub Release. Version SSoT is breakout_forge.__version__.
 
+v1.0.0 release acceptance includes dedicated integrated E2E, deterministic 9-state UI screenshot capture, multi-AI + owner UI approval evidence, and a machine-readable known-issue ledger that blocks release on open release_blocker/must_fix entries. Formal tag publishing must not bypass these gates.
+
 The repository is intentionally small; do not introduce heavy indexes, generated call graphs, or duplicated AI documentation until repeated lookup cost justifies them.
