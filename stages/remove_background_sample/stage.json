@@ -1,0 +1,25 @@
+{
+  "format_version": 1,
+  "id": "remove_background_sample",
+  "name": "Remove Background Sample",
+  "settings": {
+    "break_image": {
+      "split": {
+        "columns": 20,
+        "rows": 12
+      },
+      "load_mode": "remove_background",
+      "background_tolerance": 16
+    }
+  },
+  "layers": [
+    {
+      "id": "main",
+      "image": "main.png",
+      "hp": 1,
+      "collidable": true,
+      "destructible": true,
+      "visible": true
+    }
+  ]
+}
