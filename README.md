@@ -42,6 +42,7 @@ BreakoutForge.exe
 
 ```bat
 BreakoutForge.exe --stage sample
+BreakoutForge.exe --stage remove_background_sample
 BreakoutForge.exe --stage layered_sample
 BreakoutForge.exe --stage standard_sample
 ```
@@ -98,6 +99,7 @@ python -m breakout_forge --stage layered_sample
 ├─ stages/
 │  ├─ standard_sample/
 │  ├─ sample/
+│  ├─ remove_background_sample/
 │  └─ layered_sample/
 ├─ mods/
 │  └─ example_mod/
@@ -456,6 +458,7 @@ MODのPythonコードは、ゲーム本体と同じプロセス権限でファ�
 |---|---|
 | [stages/standard_sample](stages/standard_sample) | 画像なし標準ブロック |
 | [stages/sample](stages/sample) | 単一画像ステージ |
+| [stages/remove_background_sample](stages/remove_background_sample) | 背景除去画像ステージ |
 | [stages/layered_sample](stages/layered_sample) | 2層画像、上層HP=2 |
 | [mods/example_mod](mods/example_mod) | 公開イベント購読例 |
 
@@ -557,7 +560,8 @@ Release Gateでは次を確認します。
 - Windowsでも全pytestを再実行
 - 本番と同じ `build.bat` で実onedir build
 - ビルド済み `BreakoutForge.exe` の `--smoke-test`
-- `--validate-stage` で標準・単層画像・多層画像を実ロード
+- `--validate-stage` で標準・単層画像・背景除去・多層画像を実ロード
+- example MODを実import/register
 - `--release-probe` JSONの期待値照合
 - 別current working directoryから同じ結果になること
 - README / LICENSE / external directories の同梱
@@ -565,6 +569,9 @@ Release Gateでは次を確認します。
 - クリーンディレクトリへZIP再展開後、同じacceptanceを再実行
 - SHA-256整合
 - tagと `breakout_forge.__version__` の一致
+- 9画面UI Review Pack生成
+- Tester A/B/C + Manual UI Reviewの承認証跡
+- open release blocker / must fix が0件
 
 詳細は [docs/RELEASING.md](docs/RELEASING.md) と
 [docs/RELEASE_TEST_MATRIX.md](docs/RELEASE_TEST_MATRIX.md) を参照してください。
