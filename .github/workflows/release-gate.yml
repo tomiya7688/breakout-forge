@@ -69,6 +69,7 @@ jobs:
         run: |
           python -m breakout_forge --validate-stage standard_sample
           python -m breakout_forge --validate-stage sample
+          python -m breakout_forge --validate-stage remove_background_sample
           python -m breakout_forge --validate-stage layered_sample
           python -m breakout_forge --validate-stage stages/sample/stage.json
 
@@ -85,8 +86,11 @@ jobs:
           assert data["validated_stages"] == [
               "standard_sample",
               "sample",
+              "remove_background_sample",
               "layered_sample",
           ]
+          assert data["loaded_mods"] == ["example_mod"]
+          assert data["userdata_exists"] is True
           PY
 
   windows-release-gate:
