@@ -25,7 +25,7 @@ from breakout_forge.process.processing.standard_stage_processing import Standard
 from breakout_forge.ui.processing.render_processing import RenderProcessing
 
 
-def _standard_snapshot(root: Path):
+def _standard_runtime(root: Path):
     settings = resolve_runtime_settings(root / "config" / "common.json")
     stage = StandardStageProcessing(
         settings.stage_size,
@@ -37,12 +37,15 @@ def _standard_snapshot(root: Path):
         settings.playfield,
         board=stage.board,
     )
-    gameplay = replace(
+    return settings, stage, paddle_ball
+
+
+def _standard_gameplay(stage, paddle_ball):
+    return replace(
         paddle_ball.snapshot(),
         blocks=stage.block_snapshots(),
         score=stage.score,
     )
-    return settings, gameplay
 
 
 def _image_snapshot(root: Path, stage_id: str, *, break_top: bool = False):
@@ -111,7 +114,8 @@ def capture_release_ui(project_root: Path, output: Path) -> list[dict[str, objec
 
     pygame.init()
     try:
-        settings, gameplay = _standard_snapshot(root)
+        settings, standard_stage, paddle_ball = _standard_runtime(root)
+        gameplay = _standard_gameplay(standard_stage, paddle_ball)
         screenshots.append(
             _capture(
                 output,
@@ -123,9 +127,20 @@ def capture_release_ui(project_root: Path, output: Path) -> list[dict[str, objec
         screenshots.append(
             _capture(
                 output,
-                "02-standard-playing",
+                "02-standard-start",
                 settings,
                 FrameResult(state=GameState.PLAYING, gameplay=gameplay),
+            )
+        )
+
+        paddle_ball.update(0.12, 0.5)
+        playing_gameplay = _standard_gameplay(standard_stage, paddle_ball)
+        screenshots.append(
+            _capture(
+                output,
+                "03-standard-playing",
+                settings,
+                FrameResult(state=GameState.PLAYING, gameplay=playing_gameplay),
             )
         )
         screenshots.append(
@@ -155,7 +170,7 @@ def capture_release_ui(project_root: Path, output: Path) -> list[dict[str, objec
         screenshots.append(
             _capture(
                 output,
-                "03-image-stage",
+                "04-image-stage",
                 image_settings,
                 FrameResult(state=GameState.PLAYING, gameplay=image_gameplay),
                 image_assets,
@@ -169,7 +184,7 @@ def capture_release_ui(project_root: Path, output: Path) -> list[dict[str, objec
         screenshots.append(
             _capture(
                 output,
-                "04-remove-background",
+                "05-remove-background",
                 remove_settings,
                 FrameResult(state=GameState.PLAYING, gameplay=remove_gameplay),
                 remove_assets,
@@ -183,7 +198,7 @@ def capture_release_ui(project_root: Path, output: Path) -> list[dict[str, objec
         screenshots.append(
             _capture(
                 output,
-                "05-layered-top",
+                "06-layered-top",
                 layered_settings,
                 FrameResult(state=GameState.PLAYING, gameplay=layered_gameplay),
                 layered_assets,
@@ -198,7 +213,7 @@ def capture_release_ui(project_root: Path, output: Path) -> list[dict[str, objec
         screenshots.append(
             _capture(
                 output,
-                "06-layered-revealed",
+                "07-layered-revealed",
                 broken_settings,
                 FrameResult(state=GameState.PLAYING, gameplay=broken_gameplay),
                 broken_assets,
