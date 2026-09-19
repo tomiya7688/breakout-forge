@@ -8,6 +8,13 @@
       "status": "fixed",
       "summary": "Stage CLI contained an invalid backslash string literal and failed compileall before Windows-path parsing.",
       "regression_test": "tests/test_cli.py::test_stage_argument_keeps_windows_separator_path"
+    },
+    {
+      "id": "BUG-SCRIPTS-IMPORT-001",
+      "severity": "release_blocker",
+      "status": "fixed",
+      "summary": "CI pytest collection could not import reusable scripts.* helpers because scripts was not a package.",
+      "regression_test": "Full pytest collection imports distribution, data, license, version and release helpers."
     }
   ]
 }
