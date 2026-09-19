@@ -371,11 +371,13 @@ Python MODはサンドボックスではなく通常のPythonコードとして�
 
 ## 13. 配布
 
-Windows は PyInstaller `--onedir` を使用する。`config/`, `assets/`, `stages/`, `mods/`, `userdata/` は実行ファイルと同じ外部ベースディレクトリ配下に配置する。
+Windows は PyInstaller `--onedir` を使用する。実行ファイル名は `BreakoutForge.exe` とし、Python/依存ライブラリは `_internal/`、`config/`, `assets/`, `stages/`, `mods/`, `userdata/` は実行ファイルと同じ外部ベースディレクトリ配下に配置する。`--onefile` は使用しない。
 
 ソース実行でも同じ相対構成を使用する。起動時のcurrent working directoryには依存せず、ソース時はリポジトリルート、frozen時はexeの親ディレクトリを基準とする。
 
 `userdata/` は存在しなければ自動作成する。`userdata/settings.json` は任意で、設定解決順は `common → user → stage` とする。
+
+Windows配布は `build.bat` から生成し、ビルド後に `BreakoutForge.exe --smoke-test` を実行して、exe隣の必須外部ディレクトリと `config/common.json` をGUI起動なしで確認する。
 
 ---
 

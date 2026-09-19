@@ -65,4 +65,6 @@ A playable standard Breakout path and a single-image destructible stage path exi
 
 External paths are cwd-independent: source execution resolves the repository root from package location, while PyInstaller onedir resolves from the executable directory. userdata is created automatically; settings precedence is common -> user -> stage.
 
+Windows packaging uses build.bat + PyInstaller --onedir. Runtime dependencies belong under dist/BreakoutForge/_internal while config/assets/stages/mods/userdata stay editable beside BreakoutForge.exe. The packaged executable supports --smoke-test for headless layout validation.
+
 The repository is intentionally small; do not introduce heavy indexes, generated call graphs, or duplicated AI documentation until repeated lookup cost justifies them.
