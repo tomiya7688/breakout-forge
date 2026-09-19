@@ -75,6 +75,7 @@
       230
     ],
     "overlay_font_size": 36,
-    "score_font_size": 28
+    "score_font_size": 28,
+    "overlay_center_y_ratio": 0.68
   }
 }
