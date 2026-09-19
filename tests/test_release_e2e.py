@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from breakout_forge.contracts.frame import FrameRequest
@@ -217,3 +218,40 @@ def test_release_e2e_example_mod_imports_and_registers() -> None:
     loaded = data.load_mods(ROOT / "mods", api)
 
     assert "example_mod" in {mod.id for mod in loaded}
+
+
+
+def test_release_e2e_broken_mod_does_not_block_good_mod(
+    tmp_path: Path,
+    caplog,
+) -> None:
+    mods = tmp_path / "mods"
+
+    broken = mods / "broken"
+    broken.mkdir(parents=True)
+    (broken / "mod.json").write_text(
+        '{"format_version":1,"id":"broken","name":"Broken","version":"1.0","entry":"main.py"}',
+        encoding="utf-8",
+    )
+    (broken / "main.py").write_text(
+        "def setup(api):\n    raise RuntimeError('release e2e broken mod')\n",
+        encoding="utf-8",
+    )
+
+    good = mods / "good"
+    good.mkdir(parents=True)
+    (good / "mod.json").write_text(
+        '{"format_version":1,"id":"good","name":"Good","version":"1.0","entry":"main.py"}',
+        encoding="utf-8",
+    )
+    (good / "main.py").write_text(
+        "def setup(api):\n    api.subscribe('on_game_start', lambda event: None)\n",
+        encoding="utf-8",
+    )
+
+    caplog.set_level(logging.ERROR, logger="breakout_forge.mods")
+    loaded = DataMessenger(DataCommander()).load_mods(mods, ModApi())
+
+    assert [mod.id for mod in loaded] == ["good"]
+    assert "MOD load failed" in caplog.text
+    assert "release e2e broken mod" in caplog.text
