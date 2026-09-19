@@ -30,12 +30,13 @@ def test_prepare_distribution_replaces_stale_external_copy(tmp_path: Path) -> No
     project = tmp_path / "project"
     dist = tmp_path / "dist" / "BreakoutForge"
 
-    for name in ("config", "assets", "stages", "mods"):
+    for name in ("config", "assets", "stages", "mods", "third_party_licenses"):
         directory = project / name
         directory.mkdir(parents=True, exist_ok=True)
         (directory / "current.txt").write_text("current", encoding="utf-8")
     (project / "README.md").write_text("readme", encoding="utf-8")
     (project / "LICENSE").write_text("license", encoding="utf-8")
+    (project / "THIRD_PARTY_NOTICES.md").write_text("notices", encoding="utf-8")
 
     stale = dist / "config"
     stale.mkdir(parents=True, exist_ok=True)
