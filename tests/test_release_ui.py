@@ -63,11 +63,12 @@ def test_release_ui_capture_generates_expected_review_pack(tmp_path: Path) -> No
 
     expected = {
         "01-ready.png",
-        "02-standard-playing.png",
-        "03-image-stage.png",
-        "04-remove-background.png",
-        "05-layered-top.png",
-        "06-layered-revealed.png",
+        "02-standard-start.png",
+        "03-standard-playing.png",
+        "04-image-stage.png",
+        "05-remove-background.png",
+        "06-layered-top.png",
+        "07-layered-revealed.png",
         "08-clear.png",
         "09-game-over.png",
     }
@@ -76,4 +77,4 @@ def test_release_ui_capture_generates_expected_review_pack(tmp_path: Path) -> No
 
     manifest = json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["format_version"] == 1
-    assert len(manifest["screenshots"]) == 8
+    assert len(manifest["screenshots"]) == 9
