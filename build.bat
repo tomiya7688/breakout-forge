@@ -7,6 +7,7 @@ set "DIST_DIR=dist\BreakoutForge"
 echo [1/4] Cleaning previous build output...
 if exist build rmdir /s /q build
 if exist "%DIST_DIR%" rmdir /s /q "%DIST_DIR%"
+if exist BreakoutForge.spec del /q BreakoutForge.spec
 
 echo [2/4] Building BreakoutForge with PyInstaller onedir...
 python -m PyInstaller ^
@@ -27,6 +28,8 @@ if errorlevel 1 exit /b %errorlevel%
 echo [4/4] Running packaged smoke test...
 "%DIST_DIR%\BreakoutForge.exe" --smoke-test
 if errorlevel 1 exit /b %errorlevel%
+
+if exist BreakoutForge.spec del /q BreakoutForge.spec
 
 echo.
 echo Build succeeded: %DIST_DIR%
