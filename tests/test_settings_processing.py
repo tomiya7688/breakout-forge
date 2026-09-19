@@ -118,6 +118,7 @@ def test_common_settings_are_resolved_without_stage(tmp_path: Path) -> None:
     assert resolved.stage_size.columns == 20
     assert resolved.standard_stage.block_area_height == 240
     assert resolved.appearance.overlay_font_size == 36
+    assert resolved.appearance.overlay_center_y_ratio == 0.68
     assert resolved.break_image.split.rows == 15
     assert resolved.playfield.width == 800
 
@@ -161,4 +162,18 @@ def test_zero_initial_ball_direction_is_rejected(tmp_path: Path) -> None:
     )
 
     with pytest.raises(SettingsError):
+        resolve_common_settings(common)
+
+
+
+def test_overlay_center_y_ratio_outside_screen_is_rejected(tmp_path: Path) -> None:
+    common = _write(
+        tmp_path / "common.json",
+        COMMON.replace(
+            '"score_font_size": 28',
+            '"score_font_size": 28, "overlay_center_y_ratio": 1.2',
+        ),
+    )
+
+    with pytest.raises(SettingsError, match="overlay_center_y_ratio"):
         resolve_common_settings(common)
