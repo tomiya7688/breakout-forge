@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 from breakout_forge import __version__
@@ -58,6 +59,26 @@ def _validate_stage(stage_path: Path) -> int:
     return 0
 
 
+def _release_probe(output_path: Path) -> int:
+    """Write machine-readable release diagnostics for a built executable."""
+
+    paths = resolve_external_paths()
+    _smoke_test()
+    stages = ("standard_sample", "sample", "layered_sample")
+    for stage_id in stages:
+        _validate_stage(_stage_argument(stage_id))
+
+    payload = {
+        "version": __version__,
+        "base_dir": str(paths.base_dir),
+        "smoke_test": "ok",
+        "validated_stages": list(stages),
+    }
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="BreakoutForge")
     parser.add_argument(
@@ -80,10 +101,17 @@ def main(argv: list[str] | None = None) -> int:
         action="version",
         version=f"%(prog)s {__version__}",
     )
+    parser.add_argument(
+        "--release-probe",
+        type=Path,
+        help="Write machine-readable release diagnostics without opening pygame.",
+    )
     args = parser.parse_args(argv)
 
     if args.smoke_test:
         return _smoke_test()
+    if args.release_probe is not None:
+        return _release_probe(args.release_probe)
     if args.validate_stage is not None:
         return _validate_stage(args.validate_stage)
     return create_application(stage_path=args.stage).run()
