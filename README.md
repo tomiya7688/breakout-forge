@@ -106,10 +106,10 @@ The external directories are deliberately outside `_internal/` so users can edit
 
 ## Continuous integration
 
-GitHub Actions runs on every push and pull request with three separate checks:
+GitHub Actions runs three responsibility-separated workflows on push and pull request:
 
-- **Python tests** — installs `.[dev]`, compiles `src/` and `scripts/`, then runs `pytest` with dummy SDL drivers.
-- **External data validation** — validates `config/common.json`, every `stages/*/stage.json`, referenced stage images, MOD manifests, and repository MOD import/`setup(api)` registration.
-- **Windows onedir build** — after the first two jobs pass, runs `build.bat` on `windows-latest`, checks the distribution boundary, and uploads `dist/BreakoutForge/` as the `breakout-forge-windows-onedir` artifact.
+- **CI** (`.github/workflows/ci.yml`) — Python 3.12 setup, `compileall`, lightweight Ruff lint, the full pytest suite, and the source `--smoke-test`.
+- **Data Check** (`.github/workflows/data-check.yml`) — focused validator tests plus repository validation for common/stage JSON, referenced image existence and decode, supported image format/split rules, layered-image aspect ratios, MOD manifests, MOD imports, and `setup(api)` registration.
+- **Build Check** (`.github/workflows/build-check.yml`) — runs `build.bat` on `windows-latest`, executes the packaged smoke test, checks the onedir boundary, and uploads `dist/BreakoutForge/`.
 
-The Windows artifact is retained for 14 days by the workflow.
+The stable check names are `CI`, `Data Check`, and `Build Check`, so they can later be used directly by branch protection/rulesets. The Windows artifact is named `breakout-forge-windows-onedir` and retained for 14 days.
