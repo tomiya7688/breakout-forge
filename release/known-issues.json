@@ -1,5 +1,13 @@
 {
   "format_version": 1,
   "release_version": "1.0.0",
-  "issues": []
+  "issues": [
+    {
+      "id": "BUG-CLI-WINDOWS-PATH-001",
+      "severity": "release_blocker",
+      "status": "fixed",
+      "summary": "Stage CLI contained an invalid backslash string literal and failed compileall before Windows-path parsing.",
+      "regression_test": "tests/test_cli.py::test_stage_argument_keeps_windows_separator_path"
+    }
+  ]
 }
