@@ -1,0 +1,32 @@
+{
+  "format_version": 1,
+  "release_version": "X.Y.Z",
+  "screenshot_manifest": "release-ui/manifest.json",
+  "tester_a_visual_regression": {
+    "tool": "Applitools Eyes",
+    "status": "pending",
+    "reviewer": "",
+    "evidence": "",
+    "release_blockers": []
+  },
+  "tester_b_vision_ux": {
+    "tool": "Vision-capable AI",
+    "status": "pending",
+    "reviewer": "",
+    "evidence": "",
+    "release_blockers": []
+  },
+  "tester_c_independent_vision": {
+    "tool": "Independent vision model/session",
+    "status": "pending",
+    "reviewer": "",
+    "evidence": "",
+    "release_blockers": []
+  },
+  "manual_ui_review": {
+    "status": "pending",
+    "reviewer": "",
+    "evidence": "",
+    "release_blockers": []
+  }
+}
