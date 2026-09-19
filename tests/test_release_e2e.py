@@ -38,14 +38,15 @@ def _load_stage(stage_id: str):
 
 
 def test_release_e2e_repository_stages_load_through_real_data_pipeline() -> None:
-    for stage_id in (
-        "standard_sample",
-        "sample",
-        "remove_background_sample",
-        "layered_sample",
-    ):
-        stage, assets = _load_stage(stage_id)
-        assert stage.id == stage_id
+    expected_ids = {
+        "standard_sample": "standard_sample",
+        "sample": "sample_stage",
+        "remove_background_sample": "remove_background_sample",
+        "layered_sample": "layered_sample",
+    }
+    for directory_id, expected_stage_id in expected_ids.items():
+        stage, assets = _load_stage(directory_id)
+        assert stage.id == expected_stage_id
         if stage.layers:
             assert assets
 
