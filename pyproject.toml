@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "breakout-forge"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A small extensible breakout game foundation with image stages, layered destruction and mod support."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -38,3 +38,7 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E9", "F63", "F7", "F82"]
+
+
+[tool.setuptools.dynamic]
+version = {attr = "breakout_forge.__version__"}
