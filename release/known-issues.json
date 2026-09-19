@@ -15,6 +15,13 @@
       "status": "fixed",
       "summary": "CI pytest collection could not import reusable scripts.* helpers because pytest only added src/ to its import path.",
       "regression_test": "pyproject pytest pythonpath includes both src and repository root; full pytest collection imports repository automation helpers."
+    },
+    {
+      "id": "BUG-LAYERED-SAMPLE-PNG-001",
+      "severity": "release_blocker",
+      "status": "fixed",
+      "summary": "Bundled layered_sample PNG files were structurally invalid and failed full Pillow decode.",
+      "regression_test": "Data Check decodes every referenced stage image; release E2E loads layered_sample through the real Data pipeline."
     }
   ]
 }
