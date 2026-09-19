@@ -59,6 +59,9 @@ jobs:
       - name: Validate every repository data asset
         run: python scripts/validate_data.py --project-root .
 
+      - name: Audit licenses and bundled asset provenance
+        run: python scripts/audit_licenses.py --project-root .
+
       - name: Exercise source smoke test
         run: python -m breakout_forge --smoke-test
 
@@ -123,6 +126,9 @@ jobs:
 
       - name: Validate release data on Windows
         run: python scripts/validate_data.py --project-root .
+
+      - name: Audit release licenses on Windows
+        run: python scripts/audit_licenses.py --project-root .
 
       - name: Build actual onedir distribution
         shell: cmd
