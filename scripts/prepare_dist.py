@@ -8,6 +8,7 @@ import shutil
 
 
 EXTERNAL_DIRS = ("config", "assets", "stages", "mods")
+TOP_LEVEL_FILES = ("README.md", "LICENSE")
 
 
 def prepare_distribution(project_root: Path, dist_root: Path) -> None:
@@ -23,6 +24,12 @@ def prepare_distribution(project_root: Path, dist_root: Path) -> None:
         if target.exists():
             shutil.rmtree(target)
         shutil.copytree(source, target)
+
+    for name in TOP_LEVEL_FILES:
+        source = project_root / name
+        if not source.is_file():
+            raise FileNotFoundError(f"required distribution file not found: {source}")
+        shutil.copy2(source, dist_root / name)
 
     (dist_root / "userdata").mkdir(parents=True, exist_ok=True)
 
