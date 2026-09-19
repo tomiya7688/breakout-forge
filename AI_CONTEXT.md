@@ -69,4 +69,6 @@ Windows packaging uses build.bat + PyInstaller --onedir. Runtime dependencies be
 
 CI is split into three workflows with stable check names: CI, Data Check, and Build Check. CI compiles/lints/tests/smoke-tests source; Data Check validates and decodes stage assets plus imports/registers repository MODs and includes negative validator tests; Build Check runs build.bat on Windows and uploads dist/BreakoutForge.
 
+User-facing stage selection is available through `--stage <id|path>`, where a simple id resolves to `stages/<id>/stage.json`. README is the primary user guide for running the game, creating standard/image/layered stages, and installing MODs.
+
 The repository is intentionally small; do not introduce heavy indexes, generated call graphs, or duplicated AI documentation until repeated lookup cost justifies them.
