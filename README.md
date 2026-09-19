@@ -102,3 +102,14 @@ dist/
 ```
 
 The external directories are deliberately outside `_internal/` so users can edit or replace stages, assets, configuration, and MODs after distribution. Breakout Forge does not use PyInstaller `--onefile`.
+
+
+## Continuous integration
+
+GitHub Actions runs on every push and pull request with three separate checks:
+
+- **Python tests** — installs `.[dev]`, compiles `src/` and `scripts/`, then runs `pytest` with dummy SDL drivers.
+- **External data validation** — validates `config/common.json`, every `stages/*/stage.json`, referenced stage images, MOD manifests, and repository MOD import/`setup(api)` registration.
+- **Windows onedir build** — after the first two jobs pass, runs `build.bat` on `windows-latest`, checks the distribution boundary, and uploads `dist/BreakoutForge/` as the `breakout-forge-windows-onedir` artifact.
+
+The Windows artifact is retained for 14 days by the workflow.
