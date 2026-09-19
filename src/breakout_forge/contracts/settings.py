@@ -63,6 +63,7 @@ class AppearanceSettings:
     text_rgb: tuple[int, int, int]
     overlay_font_size: int
     score_font_size: int
+    overlay_center_y_ratio: float = 0.68
 
 
 @dataclass(frozen=True, slots=True)
