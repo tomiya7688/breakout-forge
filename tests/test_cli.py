@@ -15,3 +15,8 @@ def test_stage_argument_keeps_explicit_json_path() -> None:
 def test_stage_argument_keeps_path_with_separator() -> None:
     path = Path("stages") / "sample" / "custom-stage"
     assert _stage_argument(str(path)) == path
+
+
+def test_stage_argument_keeps_windows_separator_path() -> None:
+    raw = r"stages\sample\stage.json"
+    assert _stage_argument(raw) == Path(raw)
