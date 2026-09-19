@@ -24,7 +24,6 @@ def _smoke_test() -> int:
         raise RuntimeError(f"assets directory not found: {paths.assets_dir}")
     if not paths.userdata_dir.is_dir():
         raise RuntimeError(f"userdata directory not found: {paths.userdata_dir}")
-    print(f"Breakout Forge smoke test OK: {paths.base_dir}")
     return 0
 
 
