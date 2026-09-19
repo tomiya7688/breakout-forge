@@ -5,7 +5,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from breakout_forge.data.processing.mod_processing import discover_mods
+from breakout_forge.data.processing.mod_processing import discover_mods, load_and_register_mods
+from breakout_forge.modding.api import ModApi
 from breakout_forge.data.processing.settings_processing import resolve_common_settings
 from breakout_forge.data.processing.stage_processing import load_stage_definition
 
@@ -28,7 +29,10 @@ def validate_repository_data(project_root: Path) -> None:
                     f"stage image not found: stage={stage.id} layer={layer.id} path={layer.image_path}"
                 )
 
-    discover_mods(mods_dir)
+    discovered_mods = discover_mods(mods_dir)
+    loaded_mods = load_and_register_mods(mods_dir, ModApi())
+    if [mod.id for mod in loaded_mods] != [mod.id for mod in discovered_mods]:
+        raise RuntimeError("one or more repository MODs failed to import or register")
 
 
 def main() -> int:
