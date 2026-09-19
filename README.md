@@ -541,3 +541,30 @@ Windows Artifact名は `breakout-forge-windows-onedir` です。
 Breakout Forge本体は [MIT License](LICENSE) です。
 
 公式repositoryへ含めるサンプル素材・依存ライブラリの最終監査はv1.0.0リリース前チェックで行います。
+
+
+## 正式リリース
+
+通常の `CI / Data Check / Build Check` だけでは正式リリースしません。
+
+正式リリース時は追加の **Release Gate** を必須とし、リリース対象commitを独立して再検証します。
+
+Release Gateでは次を確認します。
+
+- Linuxで全pytest / lint / compile / data validation
+- Windowsでも全pytestを再実行
+- 本番と同じ `build.bat` で実onedir build
+- ビルド済み `BreakoutForge.exe` の `--smoke-test`
+- `--validate-stage` で標準・単層画像・多層画像を実ロード
+- `--release-probe` JSONの期待値照合
+- 別current working directoryから同じ結果になること
+- README / LICENSE / external directories の同梱
+- Release ZIP生成
+- クリーンディレクトリへZIP再展開後、同じacceptanceを再実行
+- SHA-256整合
+- tagと `breakout_forge.__version__` の一致
+
+詳細は [docs/RELEASING.md](docs/RELEASING.md) と
+[docs/RELEASE_TEST_MATRIX.md](docs/RELEASE_TEST_MATRIX.md) を参照してください。
+
+正式Releaseは、tag起動のRelease Gateがすべて成功した場合だけ作成されます。
