@@ -41,7 +41,9 @@ jobs:
             "assets",
             "stages",
             "mods",
-            "userdata"
+            "userdata",
+            "README.md",
+            "LICENSE"
           )
           foreach ($relative in $required) {
             $path = Join-Path $root $relative
