@@ -71,4 +71,6 @@ CI is split into three workflows with stable check names: CI, Data Check, and Bu
 
 User-facing stage selection is available through `--stage <id|path>`, where a simple id resolves to `stages/<id>/stage.json`. README is the primary user guide for running the game, creating standard/image/layered stages, and installing MODs.
 
+Formal releases must use the separate Release Gate, not ordinary CI alone. It reruns full regression on Linux and Windows, builds the actual onedir artifact, checks machine-readable packaged I/O, re-extracts and retests the ZIP, verifies SHA-256, and only then publishes a tag-triggered GitHub Release. Version SSoT is breakout_forge.__version__.
+
 The repository is intentionally small; do not introduce heavy indexes, generated call graphs, or duplicated AI documentation until repeated lookup cost justifies them.
