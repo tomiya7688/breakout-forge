@@ -1,0 +1,18 @@
+{
+  "format_version": 1,
+  "id": "standard_sample",
+  "name": "Standard Sample",
+  "settings": {
+    "gameplay": {
+      "ball_speed": 380
+    },
+    "stage_size": {
+      "columns": 12,
+      "rows": 8
+    },
+    "standard_stage": {
+      "block_hp": 1,
+      "score_per_layer": 100
+    }
+  }
+}
