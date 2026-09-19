@@ -56,8 +56,14 @@ def verify_release_distribution(dist_root: Path, expected_version: str) -> None:
         raise ReleaseAcceptanceError("missing release paths: " + ", ".join(missing))
 
     _run(exe, "--smoke-test")
+    _run(exe, "--smoke-test")
 
-    for stage_id in ("standard_sample", "sample", "layered_sample"):
+    for stage_id in (
+        "standard_sample",
+        "sample",
+        "remove_background_sample",
+        "layered_sample",
+    ):
         _run(exe, "--validate-stage", stage_id)
 
     # Explicit-path input must behave the same as stage-id input.
@@ -73,7 +79,14 @@ def verify_release_distribution(dist_root: Path, expected_version: str) -> None:
             "version": expected_version,
             "base_dir": str(root),
             "smoke_test": "ok",
-            "validated_stages": ["standard_sample", "sample", "layered_sample"],
+            "validated_stages": [
+                "standard_sample",
+                "sample",
+                "remove_background_sample",
+                "layered_sample",
+            ],
+            "loaded_mods": ["example_mod"],
+            "userdata_exists": True,
         }
         if probe != expected_probe:
             raise ReleaseAcceptanceError(

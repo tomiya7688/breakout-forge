@@ -48,8 +48,11 @@ Linux上で:
 - 全pytest
 - repository全データ検証
 - source smoke test
-- standard/sample/layered_sampleのheadless load
+- standard/sample/remove_background_sample/layered_sampleのheadless load
+- example MODのimport/register
 - machine-readable release probe
+- 専用Release E2E
+- 既知不具合台帳のblocker/must-fix検査
 
 ### Windows Artifact
 
@@ -62,7 +65,9 @@ Linux上で:
 - EXEが返すrelease probe JSONを期待値比較
 - stage id入力と明示stage.json path入力を検証
 - 別current working directoryから同じ結果になることを検証
-- README / LICENSE / config / stages / mods / assets / userdataを確認
+- README / LICENSE / THIRD_PARTY_NOTICES / third_party_licenses / config / stages / mods / assets / userdataを確認
+- dedicated Release E2EをWindowsでも再実行
+- UI Review Packを固定9画面で生成
 
 ### ZIP Boundary
 
@@ -94,8 +99,13 @@ BreakoutForge.exe --release-probe <output.json>
   "validated_stages": [
     "standard_sample",
     "sample",
+    "remove_background_sample",
     "layered_sample"
-  ]
+  ],
+  "loaded_mods": [
+    "example_mod"
+  ],
+  "userdata_exists": true
 }
 ```
 
@@ -111,7 +121,7 @@ tagを作る前に GitHub Actions の `Release Gate` を workflow_dispatch で�
 release_tag = v1.0.0
 ```
 
-workflow_dispatchではReleaseの公開は行わず、release candidate Artifactだけを生成する。
+workflow_dispatchではReleaseの公開は行わず、release candidate Artifactと `release-ui-review-pack` を生成する。UI Review PackをTester A/B/Cとプロジェクトオーナーが確認し、正式tag前に `release/ui-review-vX.Y.Z.json` へ証跡を記録する。
 
 ## Formal release
 
@@ -120,10 +130,14 @@ workflow_dispatchではReleaseの公開は行わず、release candidate Artifact
 3. #30 統合受け入れテスト完了
 4. #33 ライセンス・同梱物監査完了
 5. Release Gateをworkflow_dispatchでdry run
-6. versionと同じannotated tagを作成
-7. tagをpush
-8. tag起動のRelease Gateを待つ
-9. 全gate成功後のみGitHub Releaseが自動作成される
+6. UI Review PackをTester A/B/Cでレビュー
+7. プロジェクトオーナーがManual UI Reviewを実施
+8. `release/ui-review-vX.Y.Z.json` を4者approvedで記録
+9. `release/known-issues.json` にopen blocker/must-fixがないことを確認
+10. versionと同じannotated tagを作成
+11. tagをpush
+12. tag起動のRelease Gateを待つ
+13. 全gate成功後のみGitHub Releaseが自動作成される
 
 例:
 
@@ -150,6 +164,8 @@ BreakoutForge/
 ├─ _internal/
 ├─ README.md
 ├─ LICENSE
+├─ THIRD_PARTY_NOTICES.md
+├─ third_party_licenses/
 ├─ config/
 ├─ assets/
 ├─ stages/
@@ -178,3 +194,29 @@ GitHubのgenerated notesを土台にし、必要な互換性・既知問題を�
 - **known issue**: 回避策があり主要機能を阻害しないもの
 
 release blocker / must fix が残った状態ではtagを作成しない。
+
+
+## UI review evidence gate
+
+正式tagのPublish jobは `release/ui-review-vX.Y.Z.json` を検証する。
+
+必須:
+- Tester A: Visual Regression / Applitools Eyes
+- Tester B: Vision UI/UX
+- Tester C: 独立Vision
+- Manual UI Review: プロジェクトオーナー
+
+4者すべて `approved`、reviewer/evidence記録あり、`release_blockers=[]` でなければGitHub Releaseを作成しない。
+
+詳細: `docs/UI_REVIEW.md`
+
+## Machine-readable known bug gate
+
+`release/known-issues.json` を正式Releaseの既知不具合台帳とする。
+
+severity:
+- `release_blocker`
+- `must_fix`
+- `known_issue`
+
+`release_blocker` または `must_fix` が `status=open` の場合、Release Gateは失敗する。

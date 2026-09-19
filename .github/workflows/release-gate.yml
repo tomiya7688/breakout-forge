@@ -56,6 +56,16 @@ jobs:
       - name: Run complete regression suite
         run: pytest
 
+      - name: Run dedicated release E2E suite
+        run: pytest tests/test_release_e2e.py tests/test_release_ui.py tests/test_release_blockers.py -q
+
+      - name: Reject unresolved release blockers
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          python scripts/check_release_blockers.py \
+            --ledger release/known-issues.json \
+            --expected-version "${VERSION}"
+
       - name: Validate every repository data asset
         run: python scripts/validate_data.py --project-root .
 
@@ -69,6 +79,7 @@ jobs:
         run: |
           python -m breakout_forge --validate-stage standard_sample
           python -m breakout_forge --validate-stage sample
+          python -m breakout_forge --validate-stage remove_background_sample
           python -m breakout_forge --validate-stage layered_sample
           python -m breakout_forge --validate-stage stages/sample/stage.json
 
@@ -85,8 +96,11 @@ jobs:
           assert data["validated_stages"] == [
               "standard_sample",
               "sample",
+              "remove_background_sample",
               "layered_sample",
           ]
+          assert data["loaded_mods"] == ["example_mod"]
+          assert data["userdata_exists"] is True
           PY
 
   windows-release-gate:
@@ -123,6 +137,12 @@ jobs:
 
       - name: Run complete regression suite on release OS
         run: pytest
+
+      - name: Run dedicated release E2E suite on Windows
+        run: pytest tests/test_release_e2e.py tests/test_release_ui.py tests/test_release_blockers.py -q
+
+      - name: Reject unresolved release blockers on Windows
+        run: python scripts/check_release_blockers.py --ledger release/known-issues.json --expected-version "$env:RELEASE_VERSION"
 
       - name: Validate release data on Windows
         run: python scripts/validate_data.py --project-root .
@@ -167,6 +187,17 @@ jobs:
             throw "SHA-256 mismatch: expected=$expected actual=$actual"
           }
 
+      - name: Capture deterministic UI review pack on release OS
+        run: python scripts/capture_release_ui.py --project-root . --output release-ui
+
+      - name: Upload UI review pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-ui-review-pack
+          path: release-ui/
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Upload gated release candidate
         uses: actions/upload-artifact@v4
         with:
@@ -188,6 +219,21 @@ jobs:
       RELEASE_TAG: ${{ github.ref_name }}
 
     steps:
+      - name: Checkout release evidence
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Require AI and manual UI review approval
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          python scripts/check_ui_review.py \
+            --report "release/ui-review-${VERSION}.json" \
+            --expected-version "${VERSION}"
+
       - name: Download gated release candidate
         uses: actions/download-artifact@v4
         with:
