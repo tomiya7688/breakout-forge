@@ -42,7 +42,7 @@ Both use the same external layout:
 
 ```text
 BreakoutForge/
-├─ breakout-forge.exe   # onedir build only
+├─ BreakoutForge.exe    # onedir build only
 ├─ config/
 │  ├─ common.json
 │  └─ user.example.json
@@ -69,6 +69,36 @@ A stage-specific value therefore overrides a global user value, while missing ke
 
 Explicit relative paths passed to the application are resolved from the external base directory, not from the process current working directory.
 
-## Distribution direction
+## Windows onedir build
 
-Windows distribution uses PyInstaller `--onedir` so `config/`, `assets/`, `stages/`, `mods/` and `userdata/` remain outside the executable and can be replaced or edited. Packaging itself is implemented in the next Issue.
+Install development dependencies, then run:
+
+```bat
+python -m pip install -e ".[dev]"
+build.bat
+```
+
+The build script:
+
+1. cleans previous `build/` and `dist/BreakoutForge/` output,
+2. runs PyInstaller explicitly with `--onedir`,
+3. places Python/runtime dependencies under `_internal/`,
+4. copies editable `config/`, `assets/`, `stages/`, and `mods/` beside the executable,
+5. creates an empty `userdata/`,
+6. runs `BreakoutForge.exe --smoke-test` without opening the pygame window.
+
+Result:
+
+```text
+dist/
+└─ BreakoutForge/
+   ├─ BreakoutForge.exe
+   ├─ _internal/
+   ├─ config/
+   ├─ assets/
+   ├─ stages/
+   ├─ mods/
+   └─ userdata/
+```
+
+The external directories are deliberately outside `_internal/` so users can edit or replace stages, assets, configuration, and MODs after distribution. Breakout Forge does not use PyInstaller `--onefile`.
