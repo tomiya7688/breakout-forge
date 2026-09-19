@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-import sys
+import argparse
+from pathlib import Path
 
 from breakout_forge.app import create_application
 from breakout_forge.data.processing.path_processing import (
@@ -27,10 +28,30 @@ def _smoke_test() -> int:
     return 0
 
 
-def main() -> int:
-    if "--smoke-test" in sys.argv[1:]:
+def _stage_argument(value: str) -> Path:
+    candidate = Path(value)
+    if candidate.suffix.lower() == ".json" or "/" in value or "\\" in value:
+        return candidate
+    return Path("stages") / value / "stage.json"
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="BreakoutForge")
+    parser.add_argument(
+        "--stage",
+        type=_stage_argument,
+        help="Stage id (for stages/<id>/stage.json) or a stage.json path.",
+    )
+    parser.add_argument(
+        "--smoke-test",
+        action="store_true",
+        help="Validate the external distribution layout without opening pygame.",
+    )
+    args = parser.parse_args(argv)
+
+    if args.smoke_test:
         return _smoke_test()
-    return create_application().run()
+    return create_application(stage_path=args.stage).run()
 
 
 if __name__ == "__main__":
