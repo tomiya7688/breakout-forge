@@ -1,0 +1,61 @@
+name: Build Check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-check:
+    name: Build Check
+    runs-on: windows-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install project and build dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Build and smoke-test onedir distribution
+        shell: cmd
+        run: build.bat
+
+      - name: Verify distribution boundary
+        shell: pwsh
+        run: |
+          $root = "dist/BreakoutForge"
+          $required = @(
+            "BreakoutForge.exe",
+            "_internal",
+            "config/common.json",
+            "assets",
+            "stages",
+            "mods",
+            "userdata",
+            "README.md",
+            "LICENSE"
+          )
+          foreach ($relative in $required) {
+            $path = Join-Path $root $relative
+            if (-not (Test-Path $path)) {
+              throw "Missing packaged path: $path"
+            }
+          }
+
+      - name: Upload Windows onedir artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: breakout-forge-windows-onedir
+          path: dist/BreakoutForge/
+          if-no-files-found: error
+          retention-days: 14
