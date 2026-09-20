@@ -1,0 +1,264 @@
+name: Release Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to validate, e.g. v1.0.0"
+        required: true
+        type: string
+  push:
+    tags:
+      - "v*"
+    branches:
+      - "release-candidate-v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source-release-gate:
+    name: Release Gate / Source Regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SDL_VIDEODRIVER: dummy
+      SDL_AUDIODRIVER: dummy
+      RELEASE_REF: ${{ github.ref_type == 'tag' && github.ref_name || inputs.release_tag || github.ref_name }}
+
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install complete development environment
+        run: python -m pip install -e ".[dev]"
+
+      - name: Resolve release candidate tag
+        shell: bash
+        run: |
+          value="$RELEASE_REF"
+          value="${value#release-candidate-}"
+          echo "RELEASE_TAG=$value" >> "$GITHUB_ENV"
+
+      - name: Verify tag matches package version
+        run: python scripts/check_release_version.py --tag "$RELEASE_TAG"
+
+      - name: Verify dependency consistency
+        run: python -m pip check
+
+      - name: Compile all Python
+        run: python -m compileall -q src scripts tests
+
+      - name: Run release lint
+        run: ruff check src scripts tests
+
+      - name: Run complete regression suite
+        run: pytest
+
+      - name: Run dedicated release E2E suite
+        run: pytest tests/test_release_e2e.py tests/test_release_ui.py tests/test_release_blockers.py -q
+
+      - name: Reject unresolved release blockers
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          python scripts/check_release_blockers.py \
+            --ledger release/known-issues.json \
+            --expected-version "${VERSION}"
+
+      - name: Validate every repository data asset
+        run: python scripts/validate_data.py --project-root .
+
+      - name: Audit licenses and bundled asset provenance
+        run: python scripts/audit_licenses.py --project-root .
+
+      - name: Exercise source smoke test
+        run: python -m breakout_forge --smoke-test
+
+      - name: Exercise source stage inputs
+        run: |
+          python -m breakout_forge --validate-stage standard_sample
+          python -m breakout_forge --validate-stage sample
+          python -m breakout_forge --validate-stage remove_background_sample
+          python -m breakout_forge --validate-stage layered_sample
+          python -m breakout_forge --validate-stage stages/sample/stage.json
+
+      - name: Exercise machine-readable source probe
+        run: |
+          python -m breakout_forge --release-probe source-release-probe.json
+          python - <<'PY'
+          import json
+          from breakout_forge import __version__
+
+          data = json.load(open("source-release-probe.json", encoding="utf-8"))
+          assert data["version"] == __version__
+          assert data["smoke_test"] == "ok"
+          assert data["validated_stages"] == [
+              "standard_sample",
+              "sample",
+              "remove_background_sample",
+              "layered_sample",
+          ]
+          assert data["loaded_mods"] == ["example_mod"]
+          assert data["userdata_exists"] is True
+          PY
+
+  windows-release-gate:
+    name: Release Gate / Windows Artifact
+    runs-on: windows-latest
+    timeout-minutes: 45
+    needs: source-release-gate
+    env:
+      SDL_VIDEODRIVER: dummy
+      SDL_AUDIODRIVER: dummy
+      RELEASE_REF: ${{ github.ref_type == 'tag' && github.ref_name || inputs.release_tag || github.ref_name }}
+
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install complete development environment
+        run: python -m pip install -e ".[dev]"
+
+      - name: Resolve release candidate tag and verify version
+        shell: pwsh
+        run: |
+          $tag = $env:RELEASE_REF
+          if ($tag.StartsWith("release-candidate-")) {
+            $tag = $tag.Substring("release-candidate-".Length)
+          }
+          "RELEASE_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Append
+          $version = (python scripts/check_release_version.py --tag "$tag").Trim()
+          "RELEASE_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Verify dependency consistency on release OS
+        run: python -m pip check
+
+      - name: Run complete regression suite on release OS
+        run: pytest
+
+      - name: Run dedicated release E2E suite on Windows
+        run: pytest tests/test_release_e2e.py tests/test_release_ui.py tests/test_release_blockers.py -q
+
+      - name: Reject unresolved release blockers on Windows
+        run: python scripts/check_release_blockers.py --ledger release/known-issues.json --expected-version "$env:RELEASE_VERSION"
+
+      - name: Validate release data on Windows
+        run: python scripts/validate_data.py --project-root .
+
+      - name: Audit release licenses on Windows
+        run: python scripts/audit_licenses.py --project-root .
+
+      - name: Build actual onedir distribution
+        shell: cmd
+        run: build.bat
+
+      - name: Verify built executable I/O and expected behavior
+        run: python scripts/release_acceptance.py --dist-root dist/BreakoutForge --expected-version "$env:RELEASE_VERSION"
+
+      - name: Create release ZIP
+        shell: pwsh
+        run: |
+          $zip = "dist/BreakoutForge-v$env:RELEASE_VERSION-windows-x64.zip"
+          if (Test-Path $zip) { Remove-Item $zip -Force }
+          Compress-Archive -Path "dist/BreakoutForge" -DestinationPath $zip -CompressionLevel Optimal
+          $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLower()
+          "$hash  $(Split-Path $zip -Leaf)" | Set-Content "$zip.sha256"
+
+      - name: Re-extract release ZIP into a clean directory
+        shell: pwsh
+        run: |
+          $zip = "dist/BreakoutForge-v$env:RELEASE_VERSION-windows-x64.zip"
+          $extract = "release-extract"
+          if (Test-Path $extract) { Remove-Item $extract -Recurse -Force }
+          Expand-Archive -Path $zip -DestinationPath $extract
+
+      - name: Re-run acceptance against extracted ZIP
+        run: python scripts/release_acceptance.py --dist-root release-extract/BreakoutForge --expected-version "$env:RELEASE_VERSION"
+
+      - name: Verify archive checksum
+        shell: pwsh
+        run: |
+          $zip = "dist/BreakoutForge-v$env:RELEASE_VERSION-windows-x64.zip"
+          $expected = (Get-Content "$zip.sha256").Split(" ")[0]
+          $actual = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLower()
+          if ($actual -ne $expected) {
+            throw "SHA-256 mismatch: expected=$expected actual=$actual"
+          }
+
+      - name: Capture deterministic UI review pack on release OS
+        run: python scripts/capture_release_ui.py --project-root . --output release-ui
+
+      - name: Upload UI review pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-ui-review-pack
+          path: release-ui/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload gated release candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: breakout-forge-${{ env.RELEASE_TAG }}-release-candidate
+          path: |
+            dist/BreakoutForge-v*-windows-x64.zip
+            dist/BreakoutForge-v*-windows-x64.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+  publish-release:
+    name: Release Gate / Publish
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    needs:
+      - source-release-gate
+      - windows-release-gate
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
+
+    steps:
+      - name: Checkout release evidence
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Require AI and manual UI review approval
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          python scripts/check_ui_review.py \
+            --report "release/ui-review-${VERSION}.json" \
+            --expected-version "${VERSION}"
+
+      - name: Download gated release candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: breakout-forge-${{ env.RELEASE_TAG }}-release-candidate
+          path: release-assets
+
+      - name: Publish GitHub Release only after all gates pass
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$RELEASE_TAG" release-assets/* \
+            --verify-tag \
+            --title "Breakout Forge $RELEASE_TAG" \
+            --generate-notes

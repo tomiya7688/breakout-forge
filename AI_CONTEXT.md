@@ -31,14 +31,7 @@ Values that a stage author or user is likely to tune belong outside the program.
 - Missing stage keys inherit common values.
 - Keep normal gameplay tuning out of Python constants.
 
-At minimum externalize ball speed, paddle speed/size, logical stage size, break-target image split dimensions, break-target image load mode, playfield fit, layer HP, and asset paths. New tunable values should default to external data unless there is a strong reason not to.
-
-Terminology:
-- `stage_size`: logical size of the whole stage in cells. It is not window/render resolution.
-- `break_image`: the image that becomes the destructible target.
-- `break_image.split`: how many pieces the destructible image is divided into.
-- `break_image.load_mode`: `keep_background` or `remove_background` before block generation.
-- Window/render resolution is a separate UI concern.
+At minimum externalize ball speed, paddle speed/size, stage_size, break_image.split, image load mode/background tolerance, playfield fit, layer HP, and asset paths. stage_size is the whole logical stage size; break_image.split is the destructible source-image split and must not be conflated with stage_size or display resolution. New tunable values should default to external data unless there is a strong reason not to.
 
 ## Task Routing
 - App window/input/rendering: `src/breakout_forge/ui/`
@@ -46,6 +39,7 @@ Terminology:
 - File/config/stage/mod persistence and settings merge: `src/breakout_forge/data/`
 - Cross-layer contracts: `src/breakout_forge/contracts/`
 - Common defaults: `config/common.json`
+- Optional user overrides: `userdata/settings.json`
 - Stage overrides/content: `stages/<stage>/stage.json`
 - Tests: `tests/`
 - Product requirements: `DESIGN.md`
@@ -67,4 +61,18 @@ Terminology:
 7. Ignore generated artifacts, logs and history unless required by the task.
 
 ## Current State
-Foundation work is in progress. The repository is intentionally small; do not introduce heavy indexes, generated call graphs, or duplicated AI documentation until repeated lookup cost justifies them.
+A playable standard Breakout path and a single-image destructible stage path exist. Data decodes PNG/JPEG/WebP, optionally removes corner-connected background, and prepares RGBA assets. Process builds the image destruction Board from break_image.split, while UI renders source-rect tiles from the prepared source asset. Multi-layer image stages are implemented: stage layers are bottom-to-top, each Cell shows/collides with the top active layer, and differing image resolutions are allowed only when aspect ratio matches. Python MOD loading is implemented through mods/<mod>/mod.json + entry setup(api), with public event subscriptions and per-MOD/handler error isolation. MODs are unsandboxed and must be treated as trusted code.
+
+External paths are cwd-independent: source execution resolves the repository root from package location, while PyInstaller onedir resolves from the executable directory. userdata is created automatically; settings precedence is common -> user -> stage.
+
+Windows packaging uses build.bat + PyInstaller --onedir. Runtime dependencies belong under dist/BreakoutForge/_internal while config/assets/stages/mods/userdata stay editable beside BreakoutForge.exe. The packaged executable supports --smoke-test for headless layout validation.
+
+CI is split into three workflows with stable check names: CI, Data Check, and Build Check. CI compiles/lints/tests/smoke-tests source; Data Check validates and decodes stage assets plus imports/registers repository MODs and includes negative validator tests; Build Check runs build.bat on Windows and uploads dist/BreakoutForge.
+
+User-facing stage selection is available through `--stage <id|path>`, where a simple id resolves to `stages/<id>/stage.json`. README is the primary user guide for running the game, creating standard/image/layered stages, and installing MODs.
+
+Formal releases must use the separate Release Gate, not ordinary CI alone. It reruns full regression on Linux and Windows, builds the actual onedir artifact, checks machine-readable packaged I/O, re-extracts and retests the ZIP, verifies SHA-256, and only then publishes a tag-triggered GitHub Release. Version SSoT is breakout_forge.__version__.
+
+v1.0.0 release acceptance includes dedicated integrated E2E, deterministic 9-state UI screenshot capture, multi-AI + owner UI approval evidence, and a machine-readable known-issue ledger that blocks release on open release_blocker/must_fix entries. Formal tag publishing must not bypass these gates.
+
+The repository is intentionally small; do not introduce heavy indexes, generated call graphs, or duplicated AI documentation until repeated lookup cost justifies them.
