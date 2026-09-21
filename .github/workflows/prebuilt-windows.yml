@@ -1,0 +1,88 @@
+name: Prebuilt Windows
+
+on:
+  push:
+    branches:
+      - main
+      - issue-32-release-versioning
+    paths-ignore:
+      - "prebuilt/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prebuilt-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-prebuilt-windows:
+    name: Build repository Windows binary
+    if: github.actor != 'github-actions[bot]'
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout exact source commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install project and packaging dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Verify build environment contains Pillow
+        run: python -c "import PIL, pygame; print('Pillow', PIL.__version__); print('pygame', pygame.version.ver)"
+
+      - name: Run complete regression suite
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+        run: pytest
+
+      - name: Build and fully validate Windows onedir
+        run: python -m scripts.build_windows --project-root .
+
+      - name: Create repository prebuilt ZIP and checksum
+        shell: pwsh
+        run: |
+          $version = (python -c "from breakout_forge import __version__; print(__version__)").Trim()
+          $out = "prebuilt/windows-x64"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $zip = "$out/BreakoutForge-v$version-windows-x64.zip"
+          if (Test-Path $zip) { Remove-Item $zip -Force }
+          Compress-Archive -Path "dist/BreakoutForge" -DestinationPath $zip -CompressionLevel Optimal
+          $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLower()
+          "$hash  $(Split-Path $zip -Leaf)" | Set-Content "$zip.sha256"
+          "PREBUILT_ZIP=$zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "PREBUILT_SHA=$zip.sha256" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Re-extract repository prebuilt and re-run acceptance
+        shell: pwsh
+        run: |
+          $version = (python -c "from breakout_forge import __version__; print(__version__)").Trim()
+          $extract = "prebuilt-validation"
+          if (Test-Path $extract) { Remove-Item $extract -Recurse -Force }
+          Expand-Archive -Path "$env:PREBUILT_ZIP" -DestinationPath $extract
+          python scripts/release_acceptance.py --dist-root "$extract/BreakoutForge" --expected-version "$version"
+
+      - name: Commit validated prebuilt binary to repository
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f "$env:PREBUILT_ZIP" "$env:PREBUILT_SHA"
+          if (git diff --cached --quiet) {
+            Write-Host "Prebuilt binary already matches repository."
+            exit 0
+          }
+          $version = (python -c "from breakout_forge import __version__; print(__version__)").Trim()
+          git commit -m "prebuilt: update validated Windows x64 v$version [skip ci]"
+          git push origin "HEAD:$env:GITHUB_REF_NAME"

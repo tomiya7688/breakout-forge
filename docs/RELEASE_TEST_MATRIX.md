@@ -15,13 +15,14 @@
 | game logic | 全pytest | 全成功 |
 | data | `validate_data.py` | 全repository data成功 |
 | broken data fixtures | pytest negative cases | 壊れた画像/MOD/参照切れを拒否 |
-| Windows build | `build.bat` | exit 0 |
+| Windows CI build | `python -m scripts.build_windows` | Pillow/pygameを内包したonedir生成 + full packaged acceptance成功 |
+| repository prebuilt | `prebuilt/windows-x64/*.zip` | checksum一致、clean展開後acceptance成功 |
 | packaged layout | onedir | exe/_internal/config/assets/stages/mods/userdata/README/LICENSE/THIRD_PARTY_NOTICES/third_party_licensesが存在 |
 | packaged stage id | `BreakoutForge.exe --validate-stage sample` | exit 0 |
 | packaged explicit path | `--validate-stage stages\sample\stage.json` | exit 0 |
 | packaged probe | `--release-probe result.json` | JSON完全一致 |
 | foreign cwd | 別directoryからEXE probe | base_dirと結果が変化しない |
-| ZIP | release ZIP展開 | clean directoryで同じacceptanceが成功 |
+| ZIP | repository prebuilt ZIP展開 | clean directoryで同じacceptanceが成功 |
 | archive integrity | SHA-256 | 生成値と再計算値が一致 |
 | release E2E | dedicated pytest | Data→Process→MOD→state transitionsが成功 |
 | UI review pack | 9 fixed screenshots | manifestとPNG 9枚生成 |
