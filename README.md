@@ -17,7 +17,15 @@ Breakout Forge は、普通のブロック崩しとして遊べるだけでな�
 
 ### Windows配布版
 
-配布ZIPを展開し、`BreakoutForge.exe` を実行します。
+通常ユーザーはローカルでビルドしません。Python / pygame / Pillow / PyInstaller のインストールも不要です。
+
+repositoryにコミット済みの対応OS向けビルド済みZIPを使用します。
+
+```text
+prebuilt/windows-x64/BreakoutForge-v1.0.0-windows-x64.zip
+```
+
+ZIPを展開し、`BreakoutForge.exe` を実行します。
 
 ```text
 BreakoutForge/
@@ -506,28 +514,19 @@ python scripts/validate_data.py --project-root .
 python -m breakout_forge --smoke-test
 ```
 
-## Windows onedir ビルド
+## 配布バイナリ
 
-```bat
-python -m pip install -e ".[dev]"
-build.bat
-```
-
-出力:
+Windows x64向け正式配布物はrepositoryの次の場所をSource of Truthとします。
 
 ```text
-dist/
-└─ BreakoutForge/
-   ├─ BreakoutForge.exe
-   ├─ _internal/
-   ├─ config/
-   ├─ assets/
-   ├─ stages/
-   ├─ mods/
-   └─ userdata/
+prebuilt/windows-x64/
+├─ BreakoutForge-vX.Y.Z-windows-x64.zip
+└─ BreakoutForge-vX.Y.Z-windows-x64.zip.sha256
 ```
 
-`--onefile` は使用しません。
+このZIPはGitHub ActionsがWindows上で生成し、Pillowを含むruntime dependencyをPyInstaller `--onedir`へ内包したうえで、画像ステージを実ロードするacceptance testまで通したものです。
+
+一般ユーザー向けにローカルビルド手順は提供しません。開発者・CI向けの内部ビルド処理は `python -m scripts.build_windows` で実行されます。
 
 ## CI
 
@@ -535,7 +534,8 @@ GitHub Actionsは3系統です。
 
 - **CI**: compileall / Ruff / pytest / source smoke
 - **Data Check**: stage / image / MOD データ検証
-- **Build Check**: Windows onedir build / packaged smoke / Artifact
+- **Build Check**: Windows onedir build / Pillowを含むpackaged image-stage acceptance / Artifact
+- **Prebuilt Windows**: 検証済みWindows ZIPを `prebuilt/windows-x64/` へコミット
 
 Windows Artifact名は `breakout-forge-windows-onedir` です。
 
@@ -558,14 +558,14 @@ Release Gateでは次を確認します。
 
 - Linuxで全pytest / lint / compile / data validation
 - Windowsでも全pytestを再実行
-- 本番と同じ `build.bat` で実onedir build
+- repositoryにコミット済みのWindows prebuilt ZIPを検証
 - ビルド済み `BreakoutForge.exe` の `--smoke-test`
 - `--validate-stage` で標準・単層画像・背景除去・多層画像を実ロード
 - example MODを実import/register
 - `--release-probe` JSONの期待値照合
 - 別current working directoryから同じ結果になること
 - README / LICENSE / external directories の同梱
-- Release ZIP生成
+- repository prebuilt ZIPのSHA-256検証
 - クリーンディレクトリへZIP再展開後、同じacceptanceを再実行
 - SHA-256整合
 - tagと `breakout_forge.__version__` の一致
@@ -576,4 +576,4 @@ Release Gateでは次を確認します。
 詳細は [docs/RELEASING.md](docs/RELEASING.md) と
 [docs/RELEASE_TEST_MATRIX.md](docs/RELEASE_TEST_MATRIX.md) を参照してください。
 
-正式Releaseは、tag起動のRelease Gateがすべて成功した場合だけ作成されます。
+正式Releaseは、tag起動のRelease Gateがすべて成功した場合だけ作成されます。Releaseでは再ビルドせず、repositoryにコミット済みの検証済みprebuilt ZIPをそのまま添付します。
