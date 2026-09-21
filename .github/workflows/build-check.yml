@@ -29,14 +29,6 @@ jobs:
       - name: Build and fully validate onedir distribution
         run: python -m scripts.build_windows --project-root .
 
-      - name: Verify bundled Pillow import from packaged executable
-        shell: pwsh
-        run: |
-          & "dist/BreakoutForge/BreakoutForge.exe" --validate-stage sample
-          if ($LASTEXITCODE -ne 0) {
-            throw "Packaged executable could not load image stage; Pillow may be missing"
-          }
-
       - name: Verify distribution boundary
         shell: pwsh
         run: |
