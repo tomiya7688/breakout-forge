@@ -26,9 +26,16 @@ jobs:
       - name: Install project and build dependencies
         run: python -m pip install -e ".[dev]"
 
-      - name: Build and smoke-test onedir distribution
-        shell: cmd
-        run: build.bat
+      - name: Build and fully validate onedir distribution
+        run: python scripts/build_windows.py --project-root .
+
+      - name: Verify bundled Pillow import from packaged executable
+        shell: pwsh
+        run: |
+          & "dist/BreakoutForge/BreakoutForge.exe" --validate-stage sample
+          if ($LASTEXITCODE -ne 0) {
+            throw "Packaged executable could not load image stage; Pillow may be missing"
+          }
 
       - name: Verify distribution boundary
         shell: pwsh
