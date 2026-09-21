@@ -1,0 +1,16 @@
+{
+  "format_version": 1,
+  "release_version": "1.0.0",
+  "source": "Release Gate dry-run 35465360520 / artifact 10591380576 after BUG-UI-OVERLAY-BLOCKS-001 fix",
+  "screenshots": {
+    "01-ready.png": "b24900ed3b5cb3e500f8305c8fdf9414c33adf431460fea9b7737b89ada52ad8",
+    "02-standard-start.png": "9b9c6093c3955f121d896027216358f3fe87d6089417688dc961fd4797697f60",
+    "03-standard-playing.png": "e17081c3c5b47f73feff83b76761112d0aac0a1fa94cd29faf9a2c2786b32ec0",
+    "04-image-stage.png": "d5df26280b52715f891b7d2ab56da0108333b4afd749f6676846f8e60c9b068e",
+    "05-remove-background.png": "2d4c5558ce164697a719cb94e049a3006847cef9ce509256fd8bc5ad68f403d1",
+    "06-layered-top.png": "b78e0f92e12605d469a24d9f2cc8f97b7bae0ac2be66a95045f0755e108dc99f",
+    "07-layered-revealed.png": "f11394d548b781fa5dce12dbd07226c2020134a66a30fb700989c8e0a95a39be",
+    "08-clear.png": "eefb1b3f32a97966d87a103abee9f6a52f1f5d44cfb5076bd1022d98c50c98cb",
+    "09-game-over.png": "5f1818784dd71651c2b2c363237b6f684a8ba689dc976ea8173646edbb15003a"
+  }
+}
