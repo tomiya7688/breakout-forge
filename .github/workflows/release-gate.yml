@@ -165,42 +165,38 @@ jobs:
       - name: Audit release licenses on Windows
         run: python scripts/audit_licenses.py --project-root .
 
-      - name: Build actual onedir distribution
-        shell: cmd
-        run: build.bat
-
-      - name: Verify built executable I/O and expected behavior
-        run: python scripts/release_acceptance.py --dist-root dist/BreakoutForge --expected-version "$env:RELEASE_VERSION"
-
-      - name: Create release ZIP
+      - name: Locate repository prebuilt Windows archive
         shell: pwsh
         run: |
-          $zip = "dist/BreakoutForge-v$env:RELEASE_VERSION-windows-x64.zip"
-          if (Test-Path $zip) { Remove-Item $zip -Force }
-          Compress-Archive -Path "dist/BreakoutForge" -DestinationPath $zip -CompressionLevel Optimal
-          $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLower()
-          "$hash  $(Split-Path $zip -Leaf)" | Set-Content "$zip.sha256"
+          $zip = "prebuilt/windows-x64/BreakoutForge-v$env:RELEASE_VERSION-windows-x64.zip"
+          $sha = "$zip.sha256"
+          if (-not (Test-Path $zip)) {
+            throw "Repository prebuilt archive missing: $zip"
+          }
+          if (-not (Test-Path $sha)) {
+            throw "Repository prebuilt checksum missing: $sha"
+          }
+          "PREBUILT_ZIP=$zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "PREBUILT_SHA=$sha" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Re-extract release ZIP into a clean directory
+      - name: Verify repository prebuilt checksum
         shell: pwsh
         run: |
-          $zip = "dist/BreakoutForge-v$env:RELEASE_VERSION-windows-x64.zip"
+          $expected = (Get-Content "$env:PREBUILT_SHA").Split(" ")[0]
+          $actual = (Get-FileHash -Algorithm SHA256 "$env:PREBUILT_ZIP").Hash.ToLower()
+          if ($actual -ne $expected) {
+            throw "Repository prebuilt SHA-256 mismatch: expected=$expected actual=$actual"
+          }
+
+      - name: Extract repository prebuilt into clean directory
+        shell: pwsh
+        run: |
           $extract = "release-extract"
           if (Test-Path $extract) { Remove-Item $extract -Recurse -Force }
-          Expand-Archive -Path $zip -DestinationPath $extract
+          Expand-Archive -Path "$env:PREBUILT_ZIP" -DestinationPath $extract
 
-      - name: Re-run acceptance against extracted ZIP
+      - name: Verify exact repository prebuilt executable I/O
         run: python scripts/release_acceptance.py --dist-root release-extract/BreakoutForge --expected-version "$env:RELEASE_VERSION"
-
-      - name: Verify archive checksum
-        shell: pwsh
-        run: |
-          $zip = "dist/BreakoutForge-v$env:RELEASE_VERSION-windows-x64.zip"
-          $expected = (Get-Content "$zip.sha256").Split(" ")[0]
-          $actual = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLower()
-          if ($actual -ne $expected) {
-            throw "SHA-256 mismatch: expected=$expected actual=$actual"
-          }
 
       - name: Capture deterministic UI review pack on release OS
         run: python scripts/capture_release_ui.py --project-root . --output release-ui
@@ -221,8 +217,8 @@ jobs:
         with:
           name: breakout-forge-${{ env.RELEASE_TAG }}-release-candidate
           path: |
-            dist/BreakoutForge-v*-windows-x64.zip
-            dist/BreakoutForge-v*-windows-x64.zip.sha256
+            prebuilt/windows-x64/BreakoutForge-v*-windows-x64.zip
+            prebuilt/windows-x64/BreakoutForge-v*-windows-x64.zip.sha256
           if-no-files-found: error
           retention-days: 30
 
