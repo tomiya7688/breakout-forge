@@ -48,7 +48,7 @@ jobs:
         run: pytest
 
       - name: Build and fully validate Windows onedir
-        run: python scripts/build_windows.py --project-root .
+        run: python -m scripts.build_windows --project-root .
 
       - name: Create repository prebuilt ZIP and checksum
         shell: pwsh
@@ -83,5 +83,6 @@ jobs:
             Write-Host "Prebuilt binary already matches repository."
             exit 0
           }
-          git commit -m "prebuilt: update validated Windows x64 v1.0.0 [skip ci]"
+          $version = (python -c "from breakout_forge import __version__; print(__version__)").Trim()
+          git commit -m "prebuilt: update validated Windows x64 v$version [skip ci]"
           git push origin "HEAD:$env:GITHUB_REF_NAME"
