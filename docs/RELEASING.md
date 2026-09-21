@@ -220,3 +220,23 @@ severity:
 - `known_issue`
 
 `release_blocker` または `must_fix` が `status=open` の場合、Release Gateは失敗する。
+
+
+## Automated UI reviewers
+
+Tester A/B/C are part of Release Gate and are not manually transcribed.
+
+- Tester A: deterministic SHA-256 comparison against `release/ui-visual-baseline-v1.0.0.json`
+- Tester B: GitHub Copilot SDK + GPT-5 mini
+- Tester C: GitHub Copilot SDK + Claude Sonnet 4.6
+
+Tester B/C both receive all nine PNG screenshots, but use different model providers and different review rubrics.
+Any `release_blocker`, `must_fix`, rejected response, malformed model output, or model invocation failure fails Release Gate.
+
+Authentication order:
+1. optional repository secret `COPILOT_CI_TOKEN`
+2. built-in GitHub Actions `GITHUB_TOKEN`
+
+The workflow requests `copilot-requests: write`. If a repository/account policy does not permit built-in token billing, configure `COPILOT_CI_TOKEN` with a Copilot-capable token.
+
+Only the project-owner Manual UI Review remains a human approval before Publish.

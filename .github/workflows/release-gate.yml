@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: write
+  copilot-requests: write
 
 concurrency:
   group: release-${{ github.ref }}
@@ -204,6 +205,9 @@ jobs:
       - name: Capture deterministic UI review pack on release OS
         run: python scripts/capture_release_ui.py --project-root . --output release-ui
 
+      - name: Tester A - deterministic visual regression
+        run: python scripts/check_visual_baseline.py --images release-ui --baseline release/ui-visual-baseline-v1.0.0.json --expected-version "$env:RELEASE_VERSION"
+
       - name: Upload UI review pack
         uses: actions/upload-artifact@v4
         with:
@@ -222,6 +226,66 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  ai-ui-review:
+    name: Release Gate / AI UI Review
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs:
+      - windows-release-gate
+    env:
+      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_CI_TOKEN || github.token }}
+      GITHUB_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout release review scripts
+        uses: actions/checkout@v4
+
+      - name: Download UI review pack
+        uses: actions/download-artifact@v4
+        with:
+          name: release-ui-review-pack
+          path: release-ui
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install GitHub Copilot SDK
+        run: npm install --no-save @github/copilot-sdk
+
+      - name: Tester B - GPT-5 mini UI/UX review
+        env:
+          UI_REVIEW_MODEL: gpt-5-mini
+          UI_REVIEW_NAME: Tester B / GPT-5 mini
+          UI_REVIEW_RUBRIC: >-
+            Review readability, hierarchy, overlap, spacing, state clarity,
+            score/ball/paddle/block visibility, and whether READY, PLAYING,
+            CLEAR and GAME OVER are immediately understandable.
+        run: node scripts/ci_ui_vision_review.mjs release-ui tester-b-review.json
+
+      - name: Tester C - Claude Sonnet 4.6 independent review
+        env:
+          UI_REVIEW_MODEL: claude-sonnet-4.6
+          UI_REVIEW_NAME: Tester C / Claude Sonnet 4.6
+          UI_REVIEW_RUBRIC: >-
+            Review as a first-time user. Focus on misleading UI, clipping,
+            contrast, state-to-state inconsistencies, subtle rendering defects,
+            whether image/background-removal/layered states are distinguishable,
+            and anything that could be mistaken for corruption or missing content.
+        run: node scripts/ci_ui_vision_review.mjs release-ui tester-c-review.json
+
+      - name: Upload AI UI review evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-ai-ui-review
+          path: |
+            tester-b-review.json
+            tester-c-review.json
+          if-no-files-found: error
+          retention-days: 30
+
+
   publish-release:
     name: Release Gate / Publish
     if: github.ref_type == 'tag'
@@ -229,6 +293,7 @@ jobs:
     needs:
       - source-release-gate
       - windows-release-gate
+      - ai-ui-review
     env:
       RELEASE_TAG: ${{ github.ref_name }}
 
@@ -241,12 +306,13 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Require AI and manual UI review approval
+      - name: Require project-owner manual UI approval
         run: |
           VERSION="${RELEASE_TAG#v}"
           python scripts/check_ui_review.py \
             --report "release/ui-review-${VERSION}.json" \
-            --expected-version "${VERSION}"
+            --expected-version "${VERSION}" \
+            --manual-only
 
       - name: Download gated release candidate
         uses: actions/download-artifact@v4
