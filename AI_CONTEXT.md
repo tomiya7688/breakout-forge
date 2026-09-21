@@ -65,13 +65,13 @@ A playable standard Breakout path and a single-image destructible stage path exi
 
 External paths are cwd-independent: source execution resolves the repository root from package location, while PyInstaller onedir resolves from the executable directory. userdata is created automatically; settings precedence is common -> user -> stage.
 
-Windows packaging uses build.bat + PyInstaller --onedir. Runtime dependencies belong under dist/BreakoutForge/_internal while config/assets/stages/mods/userdata stay editable beside BreakoutForge.exe. The packaged executable supports --smoke-test for headless layout validation.
+Windows packaging is maintainer/CI-only via `python -m scripts.build_windows` + PyInstaller --onedir with explicit `--collect-all PIL` and pygame collection. Normal users never build locally. Validated Windows ZIPs are committed under `prebuilt/windows-x64/` and are the release artifact source of truth. Runtime dependencies belong under `_internal` while config/assets/stages/mods/userdata stay editable beside BreakoutForge.exe.
 
-CI is split into three workflows with stable check names: CI, Data Check, and Build Check. CI compiles/lints/tests/smoke-tests source; Data Check validates and decodes stage assets plus imports/registers repository MODs and includes negative validator tests; Build Check runs build.bat on Windows and uploads dist/BreakoutForge.
+CI is split into three workflows with stable check names: CI, Data Check, and Build Check. CI compiles/lints/tests/smoke-tests source; Data Check validates and decodes stage assets plus imports/registers repository MODs and includes negative validator tests; Build Check runs the internal Windows builder, verifies packaged image-stage loading (including Pillow), and uploads dist/BreakoutForge. Prebuilt Windows CI commits the validated ZIP and SHA-256 into `prebuilt/windows-x64/`.
 
 User-facing stage selection is available through `--stage <id|path>`, where a simple id resolves to `stages/<id>/stage.json`. README is the primary user guide for running the game, creating standard/image/layered stages, and installing MODs.
 
-Formal releases must use the separate Release Gate, not ordinary CI alone. It reruns full regression on Linux and Windows, builds the actual onedir artifact, checks machine-readable packaged I/O, re-extracts and retests the ZIP, verifies SHA-256, and only then publishes a tag-triggered GitHub Release. Version SSoT is breakout_forge.__version__.
+Formal releases must use the separate Release Gate, not ordinary CI alone. It reruns full regression, verifies the repository-owned prebuilt ZIP and SHA-256, re-extracts and retests that exact ZIP, and only then publishes the same prebuilt file as the tag-triggered GitHub Release. Version SSoT is breakout_forge.__version__.
 
 v1.0.0 release acceptance includes dedicated integrated E2E, deterministic 9-state UI screenshot capture, multi-AI + owner UI approval evidence, and a machine-readable known-issue ledger that blocks release on open release_blocker/must_fix entries. Formal tag publishing must not bypass these gates.
 
