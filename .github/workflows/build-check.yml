@@ -27,7 +27,7 @@ jobs:
         run: python -m pip install -e ".[dev]"
 
       - name: Build and fully validate onedir distribution
-        run: python scripts/build_windows.py --project-root .
+        run: python -m scripts.build_windows --project-root .
 
       - name: Verify bundled Pillow import from packaged executable
         shell: pwsh
