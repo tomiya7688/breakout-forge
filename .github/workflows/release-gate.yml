@@ -233,7 +233,7 @@ jobs:
     needs:
       - windows-release-gate
     env:
-      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_CI_TOKEN }}
+      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_CI_TOKEN || github.token }}
       GITHUB_TOKEN: ${{ github.token }}
 
     steps:
