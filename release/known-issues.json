@@ -29,6 +29,13 @@
       "status": "fixed",
       "summary": "READY and GAME OVER overlay text was centered on the screen and overlapped the lowest rows of standard blocks.",
       "regression_test": "appearance.overlay_center_y_ratio is externalized/validated; formal 9-state UI review pack must be visually reviewed."
+    },
+    {
+      "id": "BUG-PREBUILT-PIL-001",
+      "severity": "release_blocker",
+      "status": "fixed",
+      "summary": "A Windows packaged executable could start without Pillow bundled and fail immediately with ModuleNotFoundError: No module named 'PIL'.",
+      "regression_test": "Build Check and Prebuilt Windows use explicit PyInstaller --collect-all PIL and execute packaged image-stage/release acceptance before accepting the artifact."
     }
   ]
 }

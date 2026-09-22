@@ -19,7 +19,12 @@ REVIEW_KEYS = (
 )
 
 
-def check_ui_review(report_path: Path, expected_version: str) -> None:
+def check_ui_review(
+    report_path: Path,
+    expected_version: str,
+    *,
+    manual_only: bool = False,
+) -> None:
     try:
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -33,7 +38,8 @@ def check_ui_review(report_path: Path, expected_version: str) -> None:
             f"got {report.get('release_version')!r}"
         )
 
-    for key in REVIEW_KEYS:
+    keys = ("manual_ui_review",) if manual_only else REVIEW_KEYS
+    for key in keys:
         review = report.get(key)
         if not isinstance(review, dict):
             raise UiReviewError(f"missing UI review section: {key}")
@@ -52,8 +58,13 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--expected-version", required=True)
+    parser.add_argument("--manual-only", action="store_true")
     args = parser.parse_args()
-    check_ui_review(args.report, args.expected_version)
+    check_ui_review(
+        args.report,
+        args.expected_version,
+        manual_only=args.manual_only,
+    )
     return 0
 
 

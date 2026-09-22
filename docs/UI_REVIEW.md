@@ -26,21 +26,20 @@ python scripts/capture_release_ui.py --project-root . --output release-ui
 
 ## Tester A — Visual Regression
 
-標準: Applitools Eyes。
+Release Gateで自動実行する。
 
-確認:
-- baselineとの差分
-- レイアウト崩れ
-- 欠落
-- 位置ずれ
-- 想定外のVisual Regression
+- 承認済み9画面のSHA-256を `release/ui-visual-baseline-v1.0.0.json` に保持
+- Windows release runnerで9画面を再生成
+- screenshot集合と各PNGのdigestを完全一致で比較
+- 1pixelでも差分が出た場合はRelease Gateを失敗させる
+- 意図したUI変更の場合のみ、人間レビュー後にbaselineを更新する
 
-Applitoolsを利用できない場合でも、Tester Aを単純なTester B/Cと同一レビューに置き換えず、
-別系統のvisual regression evidenceを用意する。
+これにより外部Visual RegressionサービスのAPI keyなしでもfail-closedで運用できる。
 
 ## Tester B — Vision UI/UX
 
-Vision対応AIでスクリーンショット群をレビューする。
+Release Gateの `AI UI Review` jobで GitHub Copilot SDK + GPT-5 mini を使用し、
+9画面を一括レビューする。
 
 確認:
 - 読みやすさ
@@ -53,7 +52,8 @@ Vision対応AIでスクリーンショット群をレビューする。
 
 ## Tester C — Independent Vision
 
-Tester Bとは別モデル系統、または独立セッション/独立promptで確認する。
+Release Gateの同じjob内で、Tester Bとは別providerの Claude Sonnet 4.6 を使う。
+modelとrubricを分け、GPT系レビューと独立したsecond opinionをCIで必須化する。
 
 確認:
 - Bの見落とし
@@ -77,7 +77,8 @@ Tester Bとは別モデル系統、または独立セッション/独立prompt�
 
 ## Evidence
 
-レビュー完了後、`release/ui-review-template.json` をコピーして:
+Tester A/B/Cの証跡はCI Artifactとして自動生成する。
+人間の最終確認だけは `release/ui-review-template.json` をコピーして:
 
 ```text
 release/ui-review-vX.Y.Z.json
@@ -85,13 +86,14 @@ release/ui-review-vX.Y.Z.json
 
 を作る。
 
-4セクションすべて:
+Manual UI Reviewセクションを:
 - `status = "approved"`
 - reviewer名/識別子
 - evidence参照
 - `release_blockers = []`
 
-でなければ正式tagのPublish Gateを通さない。
+にする。Tester A/B/CはRelease Gateのjob成功そのものを必須証跡とし、
+Publish jobは `AI UI Review` job成功 + Manual UI Review approved の両方を要求する。
 
 多数決では承認しない。
 1テスターでもblockerを報告した場合、解決または人間による明示的な再判定が必要。

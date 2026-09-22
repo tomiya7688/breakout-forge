@@ -60,8 +60,9 @@ Linux上で:
 
 - 全pytestを再実行
 - repository全データを再検証
-- `build.bat` で本番と同じPyInstaller onedir build
-- ビルド済みEXEへheadless入力を与える
+- repositoryの `prebuilt/windows-x64/BreakoutForge-vX.Y.Z-windows-x64.zip` を使用
+- repository prebuiltのSHA-256を検証
+- prebuilt ZIPをクリーン展開しEXEへheadless入力を与える
 - EXEが返すrelease probe JSONを期待値比較
 - stage id入力と明示stage.json path入力を検証
 - 別current working directoryから同じ結果になることを検証
@@ -69,17 +70,18 @@ Linux上で:
 - dedicated Release E2EをWindowsでも再実行
 - UI Review Packを固定9画面で生成
 
-### ZIP Boundary
+### Repository Prebuilt Boundary
 
-実ビルド後:
+正式Release時には再ビルドしない。
 
-1. `BreakoutForge-vX.Y.Z-windows-x64.zip` を生成
-2. SHA-256を生成
+1. `prebuilt/windows-x64/BreakoutForge-vX.Y.Z-windows-x64.zip` を取得
+2. repository内の `.sha256` と照合
 3. 新しい空ディレクトリへZIPを展開
-4. 展開後の `BreakoutForge.exe` に対して同じrelease acceptanceを再実行
-5. checksumを再計算し一致確認
+4. 展開後の `BreakoutForge.exe` に対してrelease acceptanceを実行
+5. その同じZIPをGitHub Releaseへ添付
 
-「distでは動くがZIP配布後は壊れる」をここで検出する。
+prebuilt自体は `.github/workflows/prebuilt-windows.yml` がWindows runner上で生成する。
+生成時にPillow/pygameを明示確認し、PyInstallerは `--collect-all PIL` を使い、画像stage実ロードまで成功したZIPだけをrepositoryへコミットする。
 
 ## Machine-readable expected output
 
@@ -130,14 +132,15 @@ workflow_dispatchではReleaseの公開は行わず、release candidate Artifact
 3. #30 統合受け入れテスト完了
 4. #33 ライセンス・同梱物監査完了
 5. Release Gateをworkflow_dispatchでdry run
-6. UI Review PackをTester A/B/Cでレビュー
-7. プロジェクトオーナーがManual UI Reviewを実施
-8. `release/ui-review-vX.Y.Z.json` を4者approvedで記録
-9. `release/known-issues.json` にopen blocker/must-fixがないことを確認
-10. versionと同じannotated tagを作成
-11. tagをpush
-12. tag起動のRelease Gateを待つ
-13. 全gate成功後のみGitHub Releaseが自動作成される
+6. repository prebuilt Windows ZIPが対象versionでコミット済みであることを確認
+7. UI Review PackをTester A/B/Cでレビュー
+8. プロジェクトオーナーがManual UI Reviewを実施
+9. `release/ui-review-vX.Y.Z.json` にManual approvalを記録
+10. `release/known-issues.json` にopen blocker/must-fixがないことを確認
+11. versionと同じannotated tagを作成
+12. tagをpush
+13. tag起動のRelease Gateを待つ
+14. 全gate成功後のみGitHub Releaseがrepository prebuiltを添付して自動作成される
 
 例:
 
@@ -220,3 +223,53 @@ severity:
 - `known_issue`
 
 `release_blocker` または `must_fix` が `status=open` の場合、Release Gateは失敗する。
+
+
+## Automated UI reviewers
+
+Tester A/B/C are part of Release Gate and are not manually transcribed.
+
+- Tester A: deterministic SHA-256 comparison against `release/ui-visual-baseline-v1.0.0.json`
+- Tester B: GitHub Copilot SDK + GPT-5 mini
+- Tester C: GitHub Copilot SDK + Claude Sonnet 4.6
+
+Tester B/C both receive all nine PNG screenshots, but use different model providers and different review rubrics.
+Any `release_blocker`, `must_fix`, rejected response, malformed model output, or model invocation failure fails Release Gate.
+
+Authentication order:
+1. optional repository secret `COPILOT_CI_TOKEN`
+2. built-in GitHub Actions `GITHUB_TOKEN`
+
+The workflow requests `copilot-requests: write`. If a repository/account policy does not permit built-in token billing, configure `COPILOT_CI_TOKEN` with a Copilot-capable token.
+
+Only the project-owner Manual UI Review remains a human approval before Publish.
+
+
+## Prebuilt generation
+
+通常ユーザー向け配布物はrepository内に保持する。
+
+```text
+prebuilt/windows-x64/
+├─ BreakoutForge-vX.Y.Z-windows-x64.zip
+└─ BreakoutForge-vX.Y.Z-windows-x64.zip.sha256
+```
+
+生成workflow:
+`.github/workflows/prebuilt-windows.yml`
+
+内部builder:
+`python -m scripts.build_windows`
+
+内部builderは:
+- build environmentで `import PIL` / `import pygame` を事前確認
+- PyInstaller `--collect-all PIL`
+- PyInstaller `--collect-all pygame`
+- external dataコピー
+- packaged `--validate-stage sample`
+- remove_background / layered / MOD / release probe
+- clean-directory acceptance
+
+を実行する。
+
+ユーザーへローカルbuild手順は案内しない。
