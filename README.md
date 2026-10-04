@@ -1,6 +1,6 @@
 # Breakout Forge
 
-Breakout Forge は、普通のブロック崩しとして遊べるだけでなく、画像・多層破壊・外部JSON・Python MODを使って独自ステージを作れる小型ブロック崩し基盤です。
+Breakout Forge は、ブロック崩しゲームを誰でも簡単に作れるようにするためのプロジェクトです。
 
 - Python + pygame
 - Windows配布は PyInstaller `--onedir`
